@@ -1,0 +1,4 @@
+package com.duoc.aquachile.model;
+
+public class Usuario {
+}
