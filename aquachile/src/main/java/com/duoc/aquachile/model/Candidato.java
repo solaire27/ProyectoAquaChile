@@ -1,4 +1,0 @@
-package com.duoc.aquachile.model;
-
-public class Candidato {
-}
