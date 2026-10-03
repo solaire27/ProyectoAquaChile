@@ -1,3 +1,4 @@
+/* Contenedor General */
 .contenedor-dashboard {
   padding: 25px;
   background-color: #0f172a;
@@ -6,6 +7,7 @@
   color: #f8fafc;
 }
 
+/* Encabezado */
 .encabezado-dashboard {
   display: flex;
   justify-content: space-between;
@@ -63,6 +65,7 @@
   color: #f8fafc;
 }
 
+/* Grilla del Tablero Kanban (Lo que se había perdido) */
 .tablero-kanban {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -70,12 +73,22 @@
   align-items: start;
 }
 
+/* Columnas */
 .columna-kanban {
   background-color: #1e293b;
   border: 1px solid #334155;
   border-radius: 8px;
   padding: 15px;
   min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  text-align: left;
+}
+
+.columna-activa {
+  background-color: #0f172a;
+  border: 1px dashed #38bdf8;
 }
 
 .columna-header {
@@ -103,12 +116,20 @@
   font-weight: bold;
 }
 
+.columna-body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tarjetas de Candidatos */
 .tarjeta-candidato {
   background-color: #0f172a;
   border-radius: 6px;
   padding: 14px;
   margin-bottom: 12px;
   border: 1px solid #334155;
+  text-align: left;
 }
 
 .tarjeta-header {
@@ -167,25 +188,31 @@
   color: #94a3b8;
 }
 
-.btn-avanzar {
-  background-color: #334155;
-  border: 1px solid #475569;
-  color: #f8fafc;
-  font-size: 11px;
-  font-weight: bold;
-  padding: 4px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.btn-avanzar:hover {
-  background-color: #38bdf8;
-  color: #0f172a;
-}
-
 .sin-tarjetas {
   text-align: center;
   color: #64748b;
   font-size: 13px;
   margin-top: 20px;
+}
+
+/* --- ESTILOS INTERACTIVOS DRAG AND DROP (ESTILO TRELLO) --- */
+.trello-card {
+  cursor: grab;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.trello-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: #475569;
+}
+
+.trello-card:active {
+  cursor: grabbing;
+}
+
+.oculto-al-arrastrar {
+  opacity: 0.4;
+  background-color: #1e293b;
+  border: 1px dashed #475569;
 }

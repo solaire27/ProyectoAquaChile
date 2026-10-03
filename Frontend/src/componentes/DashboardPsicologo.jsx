@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import './DashboardPsicologo.css';
 
-// Datos simulados iniciales (Estructura alineada con el contrato JSON de Spring Boot)
 const solicitudesIniciales = [
   {
     id: 101,
@@ -47,36 +46,62 @@ const solicitudesIniciales = [
   }
 ];
 
-export default function DashboardPsicologo() {
+export default function DashboardPsicologo({ usuario, alCerrarSesion }) {
   const [solicitudes, setSolicitudes] = useState(solicitudesIniciales);
   const [filtroTexto, setFiltroTexto] = useState('');
+  
+  // Estado para saber visualmente qué columna está recibiendo la tarjeta
+  const [columnaActiva, setColumnaActiva] = useState(null);
 
-  // Definición de las columnas del Kanban basadas en Planner
   const columnas = [
     { id: 'NUEVA_POSTULACION', titulo: 'Evaluación Recibida', colorBarra: '#6c757d' },
-    { id: 'ENTREVISTA_AGENDADA', titulo: 'Entrevista Agendada', colorBarra: '#0d6efd' },
-    { id: 'ENTREVISTA_REALIZADA', titulo: 'Entrevista Realizada', colorBarra: '#fd7e14' },
-    { id: 'INFORME_ENVIADO', titulo: 'Informe Enviado', colorBarra: '#198754' }
+    { id: 'ENTREVISTA_AGENDADA', titulo: 'Entrevista Agendada', colorBarra: '#0284c7' },
+    { id: 'ENTREVISTA_REALIZADA', titulo: 'Entrevista Realizada', colorBarra: '#f97316' },
+    { id: 'INFORME_ENVIADO', titulo: 'Informe Enviado', colorBarra: '#10b981' }
   ];
 
-  // Función para mover una tarjeta al siguiente estado
-  const avanzarEstado = (idSolicitud, estadoActual) => {
-    const ordenEstados = ['NUEVA_POSTULACION', 'ENTREVISTA_AGENDADA', 'ENTREVISTA_REALIZADA', 'INFORME_ENVIADO'];
-    const indiceActual = ordenEstados.indexOf(estadoActual);
-    
-    if (indiceActual < ordenEstados.length - 1) {
-      const nuevoEstado = ordenEstados[indiceActual + 1];
-      
-      setSolicitudes(solicitudes.map(sol => {
-        if (sol.id === idSolicitud) {
-          return { ...sol, estado: nuevoEstado };
-        }
-        return sol;
-      }));
-    }
+  // --- LÓGICA DRAG AND DROP ---
+  
+  const manejarDragStart = (e, idSolicitud) => {
+    // Guardamos el ID de la tarjeta que se está arrastrando
+    e.dataTransfer.setData('idSolicitud', idSolicitud);
+    // Efecto visual al arrastrar
+    setTimeout(() => {
+      e.target.classList.add('oculto-al-arrastrar');
+    }, 0);
   };
 
-  // Filtrar solicitudes por nombre de candidato o cargo
+  const manejarDragEnd = (e) => {
+    e.target.classList.remove('oculto-al-arrastrar');
+    setColumnaActiva(null);
+  };
+
+  const manejarDragOver = (e, idColumna) => {
+    e.preventDefault(); // Necesario para permitir el "Drop"
+    setColumnaActiva(idColumna);
+  };
+
+  const manejarDragLeave = () => {
+    setColumnaActiva(null);
+  };
+
+  const manejarDrop = (e, nuevoEstado) => {
+    e.preventDefault();
+    const idSolicitud = parseInt(e.dataTransfer.getData('idSolicitud'));
+    
+    // Actualizamos el estado de la solicitud para moverla de columna
+    setSolicitudes(solicitudes.map(sol => {
+      if (sol.id === idSolicitud) {
+        return { ...sol, estado: nuevoEstado };
+      }
+      return sol;
+    }));
+    
+    setColumnaActiva(null);
+  };
+
+  // -----------------------------
+
   const solicitudesFiltradas = solicitudes.filter(sol => 
     sol.candidato.toLowerCase().includes(filtroTexto.toLowerCase()) ||
     sol.cargo.toLowerCase().includes(filtroTexto.toLowerCase())
@@ -84,33 +109,39 @@ export default function DashboardPsicologo() {
 
   return (
     <div className="contenedor-dashboard">
-        <header className="encabezado-dashboard">
-            <div>
-                <h1>Status Evaluaciones</h1>
-                <p className="subtitulo">Gestión de procesos psicolaborales AquaChile</p>
-            </div>
-
-            <div className="usuario-info-bar">
-                <div className="buscador">
-                <input 
-                    type="text" 
-                    placeholder="Buscar candidato o cargo..." 
-                    value={filtroTexto}
-                    onChange={(e) => setFiltroTexto(e.target.value)}
-                />
-            </div>
-            {usuario && <span className="user-tag">👤 {usuario.nombre}</span>}
-            <button className="btn-cerrar-sesion" onClick={alCerrarSesion}>Salir</button>
+      <header className="encabezado-dashboard">
+        <div>
+          <h1>Status Evaluaciones</h1>
+          <p className="subtitulo">Gestión interactiva de procesos</p>
         </div>
-    </header>
 
-      {/* Tablero Kanban por columnas */}
+        <div className="usuario-info-bar">
+          <div className="buscador">
+            <input 
+              type="text" 
+              placeholder="Buscar candidato o cargo..." 
+              value={filtroTexto}
+              onChange={(e) => setFiltroTexto(e.target.value)}
+            />
+          </div>
+          {usuario && <span className="user-tag">👤 {usuario.nombre}</span>}
+          <button className="btn-cerrar-sesion" onClick={alCerrarSesion}>Salir</button>
+        </div>
+      </header>
+
       <div className="tablero-kanban">
         {columnas.map(col => {
           const itemsColumna = solicitudesFiltradas.filter(s => s.estado === col.id);
+          const esZonaActiva = columnaActiva === col.id;
 
           return (
-            <div key={col.id} className="columna-kanban">
+            <div 
+              key={col.id} 
+              className={`columna-kanban ${esZonaActiva ? 'columna-activa' : ''}`}
+              onDragOver={(e) => manejarDragOver(e, col.id)}
+              onDragLeave={manejarDragLeave}
+              onDrop={(e) => manejarDrop(e, col.id)}
+            >
               <div className="columna-header" style={{ borderTopColor: col.colorBarra }}>
                 <h3>{col.titulo}</h3>
                 <span className="contador-badge">{itemsColumna.length}</span>
@@ -118,10 +149,16 @@ export default function DashboardPsicologo() {
 
               <div className="columna-body">
                 {itemsColumna.length === 0 ? (
-                  <p className="sin-tarjetas">Sin solicitudes</p>
+                  <p className="sin-tarjetas">Arrastra una tarjeta aquí</p>
                 ) : (
                   itemsColumna.map(sol => (
-                    <div key={sol.id} className="tarjeta-candidato">
+                    <div 
+                      key={sol.id} 
+                      className="tarjeta-candidato trello-card"
+                      draggable="true"
+                      onDragStart={(e) => manejarDragStart(e, sol.id)}
+                      onDragEnd={manejarDragEnd}
+                    >
                       <div className="tarjeta-header">
                         <span className="familia-tag">{sol.familiaCargo}</span>
                         <small>{sol.fechaSolicitud}</small>
@@ -138,16 +175,6 @@ export default function DashboardPsicologo() {
 
                       <div className="tarjeta-footer">
                         <span className="responsable-tag">👤 {sol.responsable}</span>
-                        
-                        {col.id !== 'INFORME_ENVIADO' && (
-                          <button 
-                            className="btn-avanzar"
-                            onClick={() => avanzarEstado(sol.id, sol.estado)}
-                            title="Avanzar al siguiente estado"
-                          >
-                            Avanzar →
-                          </button>
-                        )}
                       </div>
                     </div>
                   ))
