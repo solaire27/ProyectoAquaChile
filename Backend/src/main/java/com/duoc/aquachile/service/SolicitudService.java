@@ -15,12 +15,19 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class SolicitudService {
 
     private final SolicitudRepository solicitudRepository;
     private final CandidatoService candidatoService; 
     private final UsuarioRepository usuarioRepository;
+    public SolicitudService(
+            SolicitudRepository solicitudRepository,
+            CandidatoService candidatoService,
+            UsuarioRepository usuarioRepository) {
+        this.solicitudRepository = solicitudRepository;
+        this.candidatoService = candidatoService;
+        this.usuarioRepository = usuarioRepository;
+    }
 
     public SolicitudEvaluacion crearSolicitud(SolicitudRequestDTO dto) {
         Candidato candidato = candidatoService.obtenerPorId(dto.getCandidatoId());
