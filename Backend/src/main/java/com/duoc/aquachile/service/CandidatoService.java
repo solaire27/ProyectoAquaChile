@@ -6,35 +6,53 @@ import com.duoc.aquachile.model.Candidato;
 import com.duoc.aquachile.repository.CandidatoRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class CandidatoService {
 
     private final CandidatoRepository candidatoRepository;
 
-    // Constructor explícito para inyectar el repositorio sin depender de Lombok
     public CandidatoService(CandidatoRepository candidatoRepository) {
         this.candidatoRepository = candidatoRepository;
     }
 
     public Candidato crearCandidato(CandidatoRequestDTO dto, String rutaCv) {
         Candidato candidato = new Candidato();
-        
-        // Mapeo de los atributos del DTO hacia la entidad
         candidato.setNombre(dto.getNombre());
         candidato.setCorreo(dto.getCorreo());
         candidato.setTelefono(dto.getTelefono());
-        
-        // Guardar la ruta del CV
+        candidato.setCargoPostulacion(dto.getCargoPostulacion());
+        candidato.setFamiliaCargo(dto.getFamiliaCargo());
         candidato.setUrlCv(rutaCv);
-        
-        // Nota: 'cargoPostulacion' y 'familiaCargo' se utilizan en PostulacionPublicaController
-        // para crear la SolicitudEvaluacion, por lo que normalmente no se guardan en la entidad Candidato.
-        
+
         return candidatoRepository.save(candidato);
+    }
+
+
+    public Candidato crearCandidato(CandidatoRequestDTO dto) {
+        return crearCandidato(dto, null);
     }
 
     public Candidato obtenerPorId(Long id) {
         return candidatoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Candidato no encontrado con ID: " + id));
+    }
+
+
+    public List<Candidato> obtenerTodos() {
+        return candidatoRepository.findAll();
+    }
+
+
+    public Candidato actualizarCandidato(Long id, CandidatoRequestDTO dto) {
+        Candidato candidato = obtenerPorId(id);
+        candidato.setNombre(dto.getNombre());
+        candidato.setCorreo(dto.getCorreo());
+        candidato.setTelefono(dto.getTelefono());
+        candidato.setCargoPostulacion(dto.getCargoPostulacion());
+        candidato.setFamiliaCargo(dto.getFamiliaCargo());
+
+        return candidatoRepository.save(candidato);
     }
 }

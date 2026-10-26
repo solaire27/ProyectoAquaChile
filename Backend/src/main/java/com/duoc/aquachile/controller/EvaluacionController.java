@@ -11,11 +11,13 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/evaluaciones")
-@RequiredArgsConstructor
 public class EvaluacionController {
 
     private final EvaluacionService evaluacionService;
 
+    public EvaluacionController(EvaluacionService evaluacionService) {
+        this.evaluacionService = evaluacionService;
+    }
     @PostMapping
     public ResponseEntity<Evaluacion> registrar(@Valid @RequestBody EvaluacionRequestDTO dto) {
         return new ResponseEntity<>(evaluacionService.registrarEvaluacion(dto), HttpStatus.CREATED);

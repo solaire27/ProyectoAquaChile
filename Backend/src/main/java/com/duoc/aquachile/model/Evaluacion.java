@@ -1,18 +1,17 @@
 package com.duoc.aquachile.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "evaluacion")
+@Table(name = "solicitud_evaluacion")
 public class Evaluacion {
 
     @Id

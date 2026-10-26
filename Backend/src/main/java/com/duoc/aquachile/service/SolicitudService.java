@@ -62,4 +62,18 @@ public class SolicitudService {
         solicitud.setEstado(dto.getEstado());
         return solicitudRepository.save(solicitud);
     }
+    public SolicitudEvaluacion crearSolicitudAutomatica(Long candidatoId, String cargo, String familiaCargo) {
+        Candidato candidato = candidatoService.obtenerPorId(candidatoId);
+
+        SolicitudEvaluacion solicitud = new SolicitudEvaluacion();
+        solicitud.setCandidato(candidato);
+        solicitud.setCargo(cargo);
+        solicitud.setFamiliaCargo(familiaCargo);
+        solicitud.setObservaciones("Postulación generada automáticamente desde portal público");
+        solicitud.setEstado(EstadoSolicitud.NUEVA_POSTULACION);
+
+        // Responsable_ID queda NULL por defecto según el diseño de la base de datos
+
+        return solicitudRepository.save(solicitud);
+    }
 }

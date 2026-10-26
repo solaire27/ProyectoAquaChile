@@ -13,11 +13,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/candidatos")
-@RequiredArgsConstructor
 public class CandidatoController {
 
     private final CandidatoService candidatoService;
 
+    public CandidatoController(CandidatoService candidatoService) {
+        this.candidatoService = candidatoService;
+    }
     @PostMapping
     public ResponseEntity<Candidato> crear(@Valid @RequestBody CandidatoRequestDTO dto) {
         return new ResponseEntity<>(candidatoService.crearCandidato(dto), HttpStatus.CREATED);

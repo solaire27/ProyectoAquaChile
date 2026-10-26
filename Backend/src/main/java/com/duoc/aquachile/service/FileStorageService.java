@@ -12,25 +12,28 @@ import java.util.UUID;
 @Service
 public class FileStorageService {
 
+    // Directorio donde se guardarán los CVs localmente
     private final String uploadDir = "uploads/";
 
     public String guardarArchivo(MultipartFile archivo) throws IOException {
         if (archivo.isEmpty()) {
-            throw new RuntimeException("El archivo de CV está vacío");
+            return null;
         }
 
-        
-        Path directorioPath = Paths.get(uploadDir);
-        if (!Files.exists(directorioPath)) {
-            Files.createDirectories(directorioPath);
+        // Crear la carpeta si no existe
+        Path uploadPath = Paths.get(uploadDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
         }
 
-        String nombreArchivoOriginal = archivo.getOriginalFilename();
-        String nombreUnico = UUID.randomUUID().toString() + "_" + nombreArchivoOriginal;
+        // Generar un nombre único para evitar sobreescribir archivos con el mismo nombre
+        String nombreOriginal = archivo.getOriginalFilename();
+        String nombreUnico = UUID.randomUUID().toString() + "_" + nombreOriginal;
 
-        Path rutaDestino = directorioPath.resolve(nombreUnico);
-        Files.copy(archivo.getInputStream(), rutaDestino);
+        Path filePath = uploadPath.resolve(nombreUnico);
+        Files.copy(archivo.getInputStream(), filePath);
 
-        return rutaDestino.toString(); 
+        // Retornar la ruta relativa o nombre del archivo para guardarlo en la base de datos
+        return filePath.toString();
     }
 }

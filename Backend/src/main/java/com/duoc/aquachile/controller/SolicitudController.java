@@ -16,11 +16,13 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/solicitudes")
-@RequiredArgsConstructor
 public class SolicitudController {
 
     private final SolicitudService solicitudService;
 
+    public SolicitudController(SolicitudService solicitudService) {
+        this.solicitudService = solicitudService;
+    }
     @PostMapping
     public ResponseEntity<SolicitudResponseDTO> crear(@Valid @RequestBody SolicitudRequestDTO dto) {
         SolicitudEvaluacion creada = solicitudService.crearSolicitud(dto);
