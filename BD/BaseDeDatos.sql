@@ -1,50 +1,45 @@
--- =============================================================================
 -- 1. LIMPIEZA DEL ESQUEMA
--- =============================================================================
-DROP TABLE Evaluacion CASCADE CONSTRAINTS;
-DROP TABLE Solicitud_Evaluacion CASCADE CONSTRAINTS;
-DROP TABLE Candidatos CASCADE CONSTRAINTS;
-DROP TABLE Usuarios CASCADE CONSTRAINTS;
+DROP TABLE IF EXISTS Evaluacion CASCADE;
+DROP TABLE IF EXISTS Solicitud_Evaluacion CASCADE;
+DROP TABLE IF EXISTS Candidatos CASCADE;
+DROP TABLE IF EXISTS Usuarios CASCADE;
 
--- =============================================================================
--- 2. CREACIÓN DE TABLAS (ADAPTADAS PARA SPRING BOOT MVP)
--- =============================================================================
-
+-- 2. CREACIÓN DE TABLAS
 CREATE TABLE Usuarios (
-    ID NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    Nombre VARCHAR2(100) NOT NULL,
-    Correo VARCHAR2(100) NOT NULL UNIQUE,
-    Rol VARCHAR2(50) NOT NULL -- Ej: 'ANALISTA', 'EVALUADOR', 'ADMIN'
+    id BIGSERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    correo VARCHAR(100) NOT NULL UNIQUE,
+    rol VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE Candidatos (
-    ID NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    Nombre VARCHAR2(100) NOT NULL,
-    Correo VARCHAR2(100) NOT NULL UNIQUE,
-    Telefono VARCHAR2(15),
-    Cargo_Postulacion VARCHAR2(100),
-    Familia_Cargo VARCHAR2(100),
-    URL_CV VARCHAR2(255) -- Ruta local o URL del bucket donde se guarde el PDF
+    id BIGSERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    correo VARCHAR(100) NOT NULL UNIQUE,
+    telefono VARCHAR(15),
+    cargo_postulacion VARCHAR(100),
+    familia_cargo VARCHAR(100),
+    url_cv VARCHAR(255)
 );
 
 CREATE TABLE Solicitud_Evaluacion (
-    ID NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    Candidato_ID NUMBER NOT NULL,
-    Responsable_ID NUMBER, -- Puede ser NULL al inicio hasta que se asigne a un Evaluador
-    Cargo VARCHAR2(100) NOT NULL,
-    Familia_Cargo VARCHAR2(100) NOT NULL,
-    Fecha_Solicitud TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    Estado VARCHAR2(30) NOT NULL, -- Ej: 'NUEVA_POSTULACION', 'PENDIENTE', 'EN_PROCESO', 'FINALIZADA'
-    Observaciones VARCHAR2(500),
-    CONSTRAINT FK_Solicitud_Candidato FOREIGN KEY (Candidato_ID) REFERENCES Candidatos(ID),
-    CONSTRAINT FK_Solicitud_Usuario FOREIGN KEY (Responsable_ID) REFERENCES Usuarios(ID)
+    id BIGSERIAL PRIMARY KEY,
+    candidato_id BIGINT NOT NULL,
+    responsable_id BIGINT,
+    cargo VARCHAR(100) NOT NULL,
+    familia_cargo VARCHAR(100) NOT NULL,
+    fecha_solicitud TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    estado VARCHAR(30) NOT NULL,
+    observaciones VARCHAR(500),
+    CONSTRAINT fk_solicitud_candidato FOREIGN KEY (candidato_id) REFERENCES Candidatos(id),
+    CONSTRAINT fk_solicitud_usuario FOREIGN KEY (responsable_id) REFERENCES Usuarios(id)
 );
 
 CREATE TABLE Evaluacion (
-    ID NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    Solicitud_ID NUMBER NOT NULL UNIQUE, -- Relación 1 a 1: Una solicitud tiene una evaluación final
-    Fecha_Evaluacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    Resultado_General VARCHAR2(100) NOT NULL,
-    Observaciones VARCHAR2(1000),
-    CONSTRAINT FK_Evaluacion_Solicitud FOREIGN KEY (Solicitud_ID) REFERENCES Solicitud_Evaluacion(ID)
+    id BIGSERIAL PRIMARY KEY,
+    solicitud_id BIGINT NOT NULL UNIQUE,
+    fecha_evaluacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resultado_general VARCHAR(100) NOT NULL,
+    observaciones VARCHAR(1000),
+    CONSTRAINT fk_evaluacion_solicitud FOREIGN KEY (solicitud_id) REFERENCES Solicitud_Evaluacion(id)
 );
