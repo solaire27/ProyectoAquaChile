@@ -1,190 +1,138 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../services/api';
 import './PostulacionPublica.css';
 
-const catalogoCargos = {
-  "Profesional A": ["Líder Desarrollo Producción"],
-  "Profesional B C": ["Analista de Sistemas", "Coordinador servicios generales"],
-  "Operario Calificado": ["Gruero"],
-  "Técnico B C": ["Asistente Bodega Planta", "Operador Sala Control", "Monitor Producción"],
-  "Técnico A": ["Tecnico Mantencion Senior"],
-  "Supervisor B": ["Supervisor Planta"],
-  "Jefatura": ["Jefe Area Piscicultura", "Jefe de SSO"]
+// Diccionario de cargos según la familia
+const opcionesCargos = {
+    Operativo: ['Operario de Planta', 'Asistente de Producción', 'Técnico de Mantenimiento', 'Operario de Grúa'],
+    Administrativo: ['Asistente Administrativo', 'Analista Contable', 'Recepcionista', 'Ejecutivo de RRHH'],
+    Jefatura: ['Jefe de Turno', 'Jefe de Planta', 'Supervisor de Área', 'Jefe de Logística'],
+    Gerencia: ['Gerente de Operaciones', 'Gerente Comercial', 'Gerente de Finanzas']
 };
 
-export default function PostulacionPublica() {
-  const [datosFormulario, setDatosFormulario] = useState({
-    nombre: '',
-    correo: '',
-    telefono: '',
-    familiaCargo: '', 
-    cargoPostulacion: '' 
-  });
-
-  const [archivoCv, setArchivoCv] = useState(null);
-  const [cargosDisponibles, setCargosDisponibles] = useState([]);
-  
-  // Estados para feedback visual y petición HTTP
-  const [cargando, setCargando] = useState(false);
-  const [mensaje, setMensaje] = useState({ texto: '', tipo: '' }); // tipo: 'exito' | 'error'
-
-  const manejarCambioTexto = (evento) => {
-    const { name, value } = evento.target;
+const PostulacionPublica = () => {
+    const [formData, setFormData] = useState({
+        nombre: '',
+        correo: '',
+        telefono: '',
+        familiaCargo: 'Operativo',
+        cargoPostulacion: opcionesCargos['Operativo'][0]
+    });
     
-    if (name === 'familiaCargo') {
-      setCargosDisponibles(catalogoCargos[value] || []);
-      setDatosFormulario({
-        ...datosFormulario,
-        familiaCargo: value,
-        cargoPostulacion: '' 
-      });
-    } else {
-      setDatosFormulario({
-        ...datosFormulario,
-        [name]: value
-      });
-    }
-  };
+    const [cvFile, setCvFile] = useState(null);
+    const [estado, setEstado] = useState({ loading: false, mensaje: '', error: false });
 
-  const manejarCambioArchivo = (evento) => {
-    setArchivoCv(evento.target.files[0]);
-  };
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        
+        if (name === 'familiaCargo') {
+            setFormData({
+                ...formData,
+                familiaCargo: value,
+                cargoPostulacion: opcionesCargos[value][0]
+            });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
+    };
 
-  const enviarFormulario = async (evento) => {
-    evento.preventDefault();
-    setMensaje({ texto: '', tipo: '' });
+    const handleFileChange = (e) => {
+        setCvFile(e.target.files[0]);
+    };
 
-    if (!archivoCv) {
-      setMensaje({ texto: 'Por favor, adjunta tu CV.', tipo: 'error' });
-      return;
-    }
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setEstado({ loading: true, mensaje: '', error: false });
 
-    setCargando(true);
+        try {
+            const data = new FormData();
+            data.append("candidato", new Blob([JSON.stringify(formData)], { type: "application/json" }));
+            if (cvFile) data.append("cv", cvFile);
 
-    try {
-      // 1. Preparamos el FormData multipart/form-data según contrato de API
-      const formData = new FormData();
-      
-      // Enviamos la parte JSON de candidato como Blob para Spring Boot
-      const jsonBlob = new Blob([JSON.stringify(datosFormulario)], { type: 'application/json' });
-      formData.append('candidato', jsonBlob);
-      
-      // Enviamos el archivo físico del CV
-      formData.append('cv', archivoCv);
+            await api.post('/postulaciones/public', data, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
 
-      // 2. Consumo real de la API (Cambiar puerto/URL según el entorno local/producción)
-      const respuesta = await fetch('http://localhost:8080/api/postulaciones/public', {
-        method: 'POST',
-        body: formData,
-      });
+            setEstado({ loading: false, mensaje: '¡Postulación enviada con éxito! Te contactaremos pronto.', error: false });
+            setFormData({ 
+                nombre: '', correo: '', telefono: '', 
+                familiaCargo: 'Operativo', cargoPostulacion: opcionesCargos['Operativo'][0]
+            });
+            setCvFile(null);
+            e.target.reset();
+        } catch (error) {
+            setEstado({ loading: false, mensaje: 'Hubo un error al enviar la postulación.', error: true });
+        }
+    };
 
-      if (respuesta.ok) {
-        setMensaje({ texto: '¡Postulación recibida con éxito! Nos pondremos en contacto.', tipo: 'exito' });
-        // Limpiar campos
-        setDatosFormulario({ nombre: '', correo: '', telefono: '', familiaCargo: '', cargoPostulacion: '' });
-        setCargosDisponibles([]);
-        setArchivoCv(null);
-        evento.target.reset();
-      } else {
-        throw new Error('Error al enviar la postulación.');
-      }
-    } catch (error) {
-      // Si la API no responde (por ejemplo, si Spring Boot aún no está corriendo), mostramos simulación útil
-      console.warn("Backend no disponible aún. Datos preparados:", datosFormulario);
-      setMensaje({ 
-        texto: 'Modo Simulación: Formulario válido. Se conectará automáticamente cuando levantes el backend.', 
-        tipo: 'exito' 
-      });
-    } finally {
-      setCargando(false);
-    }
-  };
+    return (
+        <div className="form-page-container">
+            <header className="form-header">
+                <Link to="/" className="form-logo">AquaChile</Link>
+                <Link to="/" className="btn-volver">← Volver al Inicio</Link>
+            </header>
 
-  return (
-    <div className="contenedor-postulacion">
-      <div className="tarjeta-formulario">
-        <h2>Únete a AquaChile</h2>
-        <p>Completa tus datos y adjunta tu currículum para postular a nuestras vacantes.</p>
+            <main className="form-card-wrapper">
+                <div className="form-card">
+                    <h2>Únete a Nuestro Equipo</h2>
+                    <p className="form-subtitle">Completa tus datos para ingresar al proceso de selección</p>
 
-        {mensaje.texto && (
-          <div className={`alerta alerta-${mensaje.tipo}`}>
-            {mensaje.texto}
-          </div>
-        )}
+                    {estado.mensaje && (
+                        <div className={`alert-box ${estado.error ? 'alert-error' : 'alert-success'}`}>
+                            {estado.mensaje}
+                        </div>
+                    )}
 
-        <form onSubmit={enviarFormulario}>
-          <div className="grupo-input">
-            <label>Nombre Completo:</label>
-            <input 
-              type="text" 
-              name="nombre" 
-              value={datosFormulario.nombre} 
-              onChange={manejarCambioTexto} 
-              maxLength={100}
-              required 
-            />
-          </div>
+                    <form onSubmit={handleSubmit} className="custom-form">
+                        <div className="input-group">
+                            <label>Nombre Completo</label>
+                            <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} required placeholder="Ej: Maria González" />
+                        </div>
 
-          <div className="grupo-input">
-            <label>Correo Electrónico:</label>
-            <input 
-              type="email" 
-              name="correo" 
-              value={datosFormulario.correo} 
-              onChange={manejarCambioTexto} 
-              maxLength={100}
-              required 
-            />
-          </div>
+                        <div className="form-row">
+                            <div className="input-group">
+                                <label>Correo Electrónico</label>
+                                <input type="email" name="correo" value={formData.correo} onChange={handleChange} required placeholder="ejemplo@correo.com" />
+                            </div>
+                            <div className="input-group">
+                                <label>Teléfono</label>
+                                <input type="text" name="telefono" value={formData.telefono} onChange={handleChange} placeholder="+56 9 1234 5678" />
+                            </div>
+                        </div>
 
-          <div className="grupo-input">
-            <label>Teléfono de Contacto:</label>
-            <input 
-              type="tel" 
-              name="telefono" 
-              value={datosFormulario.telefono} 
-              onChange={manejarCambioTexto} 
-              maxLength={15} 
-              placeholder="+56912345678"
-              required 
-            />
-          </div>
+                        <div className="form-row">
+                            <div className="input-group">
+                                <label>Familia de Cargo</label>
+                                <select name="familiaCargo" value={formData.familiaCargo} onChange={handleChange}>
+                                    {Object.keys(opcionesCargos).map(familia => (
+                                        <option key={familia} value={familia}>{familia}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="input-group">
+                                <label>Cargo al que postulas</label>
+                                <select name="cargoPostulacion" value={formData.cargoPostulacion} onChange={handleChange} required>
+                                    {opcionesCargos[formData.familiaCargo].map(cargo => (
+                                        <option key={cargo} value={cargo}>{cargo}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
 
-          <div className="grupo-input">
-            <label>Familia de Cargo:</label>
-            <select name="familiaCargo" value={datosFormulario.familiaCargo} onChange={manejarCambioTexto} required>
-              <option value="">-- Seleccione una familia --</option>
-              {Object.keys(catalogoCargos).map((familia) => (
-                <option key={familia} value={familia}>{familia}</option>
-              ))}
-            </select>
-          </div>
+                        <div className="input-group">
+                            <label>Adjuntar Currículum Vitae (PDF o Word)</label>
+                            <input type="file" onChange={handleFileChange} accept=".pdf,.doc,.docx" className="file-input" />
+                        </div>
 
-          <div className="grupo-input">
-            <label>Cargo al que postula:</label>
-            <select 
-              name="cargoPostulacion" 
-              value={datosFormulario.cargoPostulacion} 
-              onChange={manejarCambioTexto} 
-              required 
-              disabled={!datosFormulario.familiaCargo}
-            >
-              <option value="">-- Seleccione un cargo --</option>
-              {cargosDisponibles.map((cargo) => (
-                <option key={cargo} value={cargo}>{cargo}</option>
-              ))}
-            </select>
-          </div>
+                        <button type="submit" disabled={estado.loading} className="btn-submit">
+                            {estado.loading ? 'Procesando...' : 'Enviar Postulación'}
+                        </button>
+                    </form>
+                </div>
+            </main>
+        </div>
+    );
+};
 
-          <div className="grupo-input">
-            <label>Adjuntar CV (PDF o Word):</label>
-            <input type="file" accept=".pdf,.doc,.docx" onChange={manejarCambioArchivo} required />
-          </div>
-
-          <button type="submit" className="boton-enviar" disabled={cargando}>
-            {cargando ? 'Enviando...' : 'Enviar Postulación'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
+export default PostulacionPublica;

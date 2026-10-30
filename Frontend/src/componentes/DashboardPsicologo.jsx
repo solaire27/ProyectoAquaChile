@@ -1,189 +1,88 @@
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import api from '../services/api';
 import './DashboardPsicologo.css';
 
-const solicitudesIniciales = [
-  {
-    id: 101,
-    candidato: "Juan Pérez",
-    cargo: "Analista de Sistemas",
-    familiaCargo: "Profesional B C",
-    fechaSolicitud: "2026-09-25",
-    estado: "NUEVA_POSTULACION",
-    responsable: "Sin asignar",
-    observaciones: "Postulación pública vía web"
-  },
-  {
-    id: 102,
-    candidato: "María Victoria Bustamante",
-    cargo: "Líder Desarrollo Producción",
-    familiaCargo: "Profesional A",
-    fechaSolicitud: "2026-09-20",
-    estado: "ENTREVISTA_AGENDADA",
-    responsable: "María Victoria B.",
-    fechaEntrevista: "09/10 a las 10:00",
-    observaciones: "Entrevista coordinada"
-  },
-  {
-    id: 103,
-    candidato: "Carlos Muñoz",
-    cargo: "Operador Sala Control",
-    familiaCargo: "Técnico B C",
-    fechaSolicitud: "2026-09-22",
-    estado: "ENTREVISTA_REALIZADA",
-    responsable: "Juan Rebolledo",
-    fechaEntrevista: "09/10 a las 12:30",
-    observaciones: "Pendiente redactar informe final"
-  },
-  {
-    id: 104,
-    candidato: "Ana Silva",
-    cargo: "Jefe de SSO",
-    familiaCargo: "Jefatura",
-    fechaSolicitud: "2026-09-15",
-    estado: "INFORME_ENVIADO",
-    responsable: "María Victoria B.",
-    observaciones: "Candidato Recomendado"
-  }
-];
+const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
+    const [solicitudes, setSolicitudes] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-export default function DashboardPsicologo({ usuario, alCerrarSesion }) {
-  const [solicitudes, setSolicitudes] = useState(solicitudesIniciales);
-  const [filtroTexto, setFiltroTexto] = useState('');
-  
-  // Estado para saber visualmente qué columna está recibiendo la tarjeta
-  const [columnaActiva, setColumnaActiva] = useState(null);
+    useEffect(() => {
+        const fetchSolicitudes = async () => {
+            try {
+                const response = await api.get('/solicitudes');
+                setSolicitudes(response.data);
+            } catch (error) {
+                console.error("Error al obtener solicitudes:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-  const columnas = [
-    { id: 'NUEVA_POSTULACION', titulo: 'Evaluación Recibida', colorBarra: '#6c757d' },
-    { id: 'ENTREVISTA_AGENDADA', titulo: 'Entrevista Agendada', colorBarra: '#0284c7' },
-    { id: 'ENTREVISTA_REALIZADA', titulo: 'Entrevista Realizada', colorBarra: '#f97316' },
-    { id: 'INFORME_ENVIADO', titulo: 'Informe Enviado', colorBarra: '#10b981' }
-  ];
+        fetchSolicitudes();
+    }, []);
 
-  // --- LÓGICA DRAG AND DROP ---
-  
-  const manejarDragStart = (e, idSolicitud) => {
-    // Guardamos el ID de la tarjeta que se está arrastrando
-    e.dataTransfer.setData('idSolicitud', idSolicitud);
-    // Efecto visual al arrastrar
-    setTimeout(() => {
-      e.target.classList.add('oculto-al-arrastrar');
-    }, 0);
-  };
+    const columnas = [
+        { key: 'NUEVA_POSTULACION', titulo: 'Nuevas Postulaciones', color: '#38bdf8' },
+        { key: 'PENDIENTE', titulo: 'Pendientes', color: '#f59e0b' },
+        { key: 'EN_PROCESO', titulo: 'En Evaluación', color: '#8b5cf6' },
+        { key: 'FINALIZADA', titulo: 'Finalizadas', color: '#10b981' }
+    ];
 
-  const manejarDragEnd = (e) => {
-    e.target.classList.remove('oculto-al-arrastrar');
-    setColumnaActiva(null);
-  };
+    if (loading) {
+        return <div className="kanban-loading">Cargando tablero Kanban...</div>;
+    }
 
-  const manejarDragOver = (e, idColumna) => {
-    e.preventDefault(); // Necesario para permitir el "Drop"
-    setColumnaActiva(idColumna);
-  };
+    return (
+        <div className="kanban-page">
+            <header className="kanban-header">
+                <div className="kanban-branding">
+                    <span className="kanban-logo">AquaChile</span>
+                    <span className="kanban-badge">Portal Psicólogos</span>
+                </div>
+                <div className="user-info">
+                    <span>{usuario?.nombre || 'Psicólogo Evaluador'}</span>
+                    <button onClick={alCerrarSesion} className="btn-logout">Cerrar Sesión</button>
+                </div>
+            </header>
 
-  const manejarDragLeave = () => {
-    setColumnaActiva(null);
-  };
+            <main className="kanban-board">
+                {columnas.map(col => {
+                    const tarjetas = solicitudes.filter(sol => sol.estado === col.key);
+                    return (
+                        <div key={col.key} className="kanban-column">
+                            <div className="column-header">
+                                <div className="column-title-group">
+                                    <span className="status-dot" style={{ backgroundColor: col.color }}></span>
+                                    <h3>{col.titulo}</h3>
+                                </div>
+                                <span className="card-count">{tarjetas.length}</span>
+                            </div>
 
-  const manejarDrop = (e, nuevoEstado) => {
-    e.preventDefault();
-    const idSolicitud = parseInt(e.dataTransfer.getData('idSolicitud'));
-    
-    // Actualizamos el estado de la solicitud para moverla de columna
-    setSolicitudes(solicitudes.map(sol => {
-      if (sol.id === idSolicitud) {
-        return { ...sol, estado: nuevoEstado };
-      }
-      return sol;
-    }));
-    
-    setColumnaActiva(null);
-  };
+                            <div className="cards-container">
+                                {tarjetas.map(sol => (
+                                    <div key={sol.id} className="kanban-card">
+                                        <div className="card-tag">{sol.familiaCargo || 'General'}</div>
+                                        <h4 className="card-candidate-name">{sol.nombreCandidato}</h4>
+                                        <p className="card-position">{sol.cargo}</p>
+                                        <div className="card-footer">
+                                            <span className="card-id">#SOL-{sol.id}</span>
+                                            <span className="card-date">
+                                                {sol.fechaSolicitud ? new Date(sol.fechaSolicitud).toLocaleDateString() : 'Reciente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
 
-  // -----------------------------
-
-  const solicitudesFiltradas = solicitudes.filter(sol => 
-    sol.candidato.toLowerCase().includes(filtroTexto.toLowerCase()) ||
-    sol.cargo.toLowerCase().includes(filtroTexto.toLowerCase())
-  );
-
-  return (
-    <div className="contenedor-dashboard">
-      <header className="encabezado-dashboard">
-        <div>
-          <h1>Status Evaluaciones</h1>
-          <p className="subtitulo">Gestión interactiva de procesos</p>
+                                {tarjetas.length === 0 && (
+                                    <div className="empty-column">Sin tarjetas aquí</div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </main>
         </div>
+    );
+};
 
-        <div className="usuario-info-bar">
-          <div className="buscador">
-            <input 
-              type="text" 
-              placeholder="Buscar candidato o cargo..." 
-              value={filtroTexto}
-              onChange={(e) => setFiltroTexto(e.target.value)}
-            />
-          </div>
-          {usuario && <span className="user-tag">👤 {usuario.nombre}</span>}
-          <button className="btn-cerrar-sesion" onClick={alCerrarSesion}>Salir</button>
-        </div>
-      </header>
-
-      <div className="tablero-kanban">
-        {columnas.map(col => {
-          const itemsColumna = solicitudesFiltradas.filter(s => s.estado === col.id);
-          const esZonaActiva = columnaActiva === col.id;
-
-          return (
-            <div 
-              key={col.id} 
-              className={`columna-kanban ${esZonaActiva ? 'columna-activa' : ''}`}
-              onDragOver={(e) => manejarDragOver(e, col.id)}
-              onDragLeave={manejarDragLeave}
-              onDrop={(e) => manejarDrop(e, col.id)}
-            >
-              <div className="columna-header" style={{ borderTopColor: col.colorBarra }}>
-                <h3>{col.titulo}</h3>
-                <span className="contador-badge">{itemsColumna.length}</span>
-              </div>
-
-              <div className="columna-body">
-                {itemsColumna.length === 0 ? (
-                  <p className="sin-tarjetas">Arrastra una tarjeta aquí</p>
-                ) : (
-                  itemsColumna.map(sol => (
-                    <div 
-                      key={sol.id} 
-                      className="tarjeta-candidato trello-card"
-                      draggable="true"
-                      onDragStart={(e) => manejarDragStart(e, sol.id)}
-                      onDragEnd={manejarDragEnd}
-                    >
-                      <div className="tarjeta-header">
-                        <span className="familia-tag">{sol.familiaCargo}</span>
-                        <small>{sol.fechaSolicitud}</small>
-                      </div>
-
-                      <h4>{sol.candidato}</h4>
-                      <p className="cargo-texto"><strong>Cargo:</strong> {sol.cargo}</p>
-                      
-                      {sol.fechaEntrevista && (
-                        <p className="entrevista-fecha">📅 {sol.fechaEntrevista}</p>
-                      )}
-
-                      <p className="observacion-corta">{sol.observaciones}</p>
-
-                      <div className="tarjeta-footer">
-                        <span className="responsable-tag">👤 {sol.responsable}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+export default DashboardPsicologo;
