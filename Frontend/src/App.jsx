@@ -1,73 +1,70 @@
 import { useState } from 'react';
+import { Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
 import PostulacionPublica from './componentes/PostulacionPublica';
 import DashboardPsicologo from './componentes/DashboardPsicologo';
 import Login from './componentes/Login';
 
 function App() {
-  // Selector de aplicación: 'publica' | 'psicologos'
-  const [moduloActual, setModuloActual] = useState('publica');
-  
-  // Estado de autenticación para el portal de psicólogos
   const [usuario, setUsuario] = useState(null);
+  
+  const navigate = useNavigate();
+
+  const manejarAutenticacion = (user) => {
+    setUsuario(user);
+    navigate('/dashboard'); 
+  };
 
   const cerrarSesion = () => {
     localStorage.removeItem('token');
     setUsuario(null);
+    navigate('/login'); 
   };
 
   return (
     <div style={{ backgroundColor: '#0f172a', minHeight: '100vh' }}>
-      {/* Selector superior para alternar entre las 2 aplicaciones independientes */}
-      <div style={{
+      
+      {/* Menú de Navegación Global */}
+      <nav style={{
         display: 'flex', 
         justifyContent: 'center', 
-        gap: '10px', 
-        padding: '12px', 
+        gap: '20px', 
+        padding: '15px', 
         backgroundColor: '#1e293b', 
         borderBottom: '1px solid #334155'
       }}>
-        <button 
-          onClick={() => setModuloActual('publica')}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: moduloActual === 'publica' ? '#38bdf8' : '#0f172a',
-            color: moduloActual === 'publica' ? '#0f172a' : '#94a3b8',
-            border: '1px solid #334155',
-            borderRadius: '6px',
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}
-        >
-          🌐 Sitio Público (Postulación)
-        </button>
+        {/* Usamos Link en lugar de etiquetas <a> para que la página no recargue */}
+        <Link to="/" style={{ color: '#38bdf8', textDecoration: 'none', fontWeight: 'bold' }}>
+          🌐 Sitio Público
+        </Link>
+        <Link to="/dashboard" style={{ color: '#38bdf8', textDecoration: 'none', fontWeight: 'bold' }}>
+          🔒 Portal Psicólogos
+        </Link>
+      </nav>
 
-        <button 
-          onClick={() => setModuloActual('psicologos')}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: moduloActual === 'psicologos' ? '#38bdf8' : '#0f172a',
-            color: moduloActual === 'psicologos' ? '#0f172a' : '#94a3b8',
-            border: '1px solid #334155',
-            borderRadius: '6px',
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}
-        >
-          🔒 Portal Psicólogos (Interno)
-        </button>
-      </div>
+      {/* Definición de las Rutas (Páginas) */}
+      <Routes>
+        {/* Ruta 1: Portal de Postulación (Cualquiera puede entrar) */}
+        <Route path="/" element={<PostulacionPublica />} />
 
-      {/* Renderizado de Módulos */}
-      {moduloActual === 'publica' ? (
-        <PostulacionPublica />
-      ) : (
-        /* Si está en el módulo de Psicólogos, exige Login */
-        !usuario ? (
-          <Login alAutenticar={(user) => setUsuario(user)} />
-        ) : (
-          <DashboardPsicologo usuario={usuario} alCerrarSesion={cerrarSesion} />
-        )
-      )}
+        {/* Ruta 2: Pantalla de Login */}
+        <Route path="/login" element={<Login alAutenticar={manejarAutenticacion} />} />
+
+        {/* Ruta 3: Dashboard Kanban (Ruta Protegida) */}
+        <Route 
+          path="/dashboard" 
+          element={
+            usuario ? (
+              <DashboardPsicologo usuario={usuario} alCerrarSesion={cerrarSesion} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
+        />
+        
+        {/* Ruta comodín: Si escriben una URL que no existe, los mandamos al inicio */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
     </div>
   );
 }
