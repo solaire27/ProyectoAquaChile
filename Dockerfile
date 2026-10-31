@@ -1,7 +1,7 @@
 # ==========================================
 # ETAPA 1: Construir el Frontend (React)
 # ==========================================
-FROM node:18-alpine AS frontend-build
+FROM node:20-alpine AS frontend-build
 WORKDIR /app/frontend
 
 COPY Frontend/package*.json ./
@@ -13,9 +13,6 @@ RUN npm run build
 # ETAPA 2: Construir el Backend (Spring Boot)
 # ==========================================
 
-# ==========================================
-# ETAPA 2: Construir el Backend (Spring Boot)
-# ==========================================
 FROM maven:3.9.6-eclipse-temurin-21 AS backend-build
 WORKDIR /app/backend
 COPY Backend/pom.xml ./
