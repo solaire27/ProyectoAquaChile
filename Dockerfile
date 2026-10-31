@@ -1,7 +1,7 @@
 # ==========================================
 # ETAPA 1: Construir el Frontend (React)
 # ==========================================
-FROM node:20-alpine AS frontend-build
+FROM node:20  AS frontend-build
 WORKDIR /app/frontend
 
 COPY Frontend/package*.json ./
