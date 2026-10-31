@@ -13,17 +13,17 @@ RUN npm run build
 # ETAPA 2: Construir el Backend (Spring Boot)
 # ==========================================
 
-FROM eclipse-temurin:21-jdk-jammy AS backend-build
+# ==========================================
+# ETAPA 2: Construir el Backend (Spring Boot)
+# ==========================================
+FROM maven:3.9.6-eclipse-temurin-21 AS backend-build
 WORKDIR /app/backend
-COPY Backend/mvnw Backend/pom.xml ./
-COPY Backend/.mvn .mvn
-
-RUN chmod +x ./mvnw
-RUN ./mvnw dependency:go-offline
+COPY Backend/pom.xml ./
+RUN mvn dependency:go-offline
 COPY Backend/src ./src
-
+# Copiamos React compilado a los recursos estáticos de Spring Boot
 COPY --from=frontend-build /app/frontend/dist ./src/main/resources/static
-RUN ./mvnw clean package -DskipTests
+RUN mvn clean package -DskipTests
 
 # ==========================================
 # ETAPA 3: Imagen Final de Ejecución
