@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './Login.css';
 
 export default function Login({ alAutenticar }) {
@@ -46,6 +47,19 @@ export default function Login({ alAutenticar }) {
 
   return (
     <div className="contenedor-login">
+      <Link to="/" style={{ 
+        position: 'absolute', 
+        top: '30px', 
+        left: '40px', 
+        color: '#f8fafc', 
+        textDecoration: 'none', 
+        fontSize: '15px', 
+        fontWeight: '500',
+        opacity: '0.8'
+      }}>
+        ← Volver al Inicio
+      </Link>
+
       <div className="tarjeta-login">
         <div className="login-header">
           <div className="logo-badge">AquaChile</div>
