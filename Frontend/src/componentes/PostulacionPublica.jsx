@@ -103,16 +103,16 @@ const PostulacionPublica = () => {
 
                         <div className="form-row">
                             <div className="input-group">
-                                <label>Familia de Cargo</label>
-                                <select name="familiaCargo" value={formData.familiaCargo} onChange={handleChange}>
+                                <label htmlFor="familiaCargo">Familia de Cargo</label>
+                                <select id="familiaCargo" name="familiaCargo" value={formData.familiaCargo} onChange={handleChange}>
                                     {Object.keys(opcionesCargos).map(familia => (
                                         <option key={familia} value={familia}>{familia}</option>
                                     ))}
                                 </select>
                             </div>
                             <div className="input-group">
-                                <label>Cargo al que postulas</label>
-                                <select name="cargoPostulacion" value={formData.cargoPostulacion} onChange={handleChange} required>
+                                <label htmlFor="cargoPostulacion">Cargo al que postulas</label>
+                                <select id="cargoPostulacion" name="cargoPostulacion" value={formData.cargoPostulacion} onChange={handleChange} required>
                                     {opcionesCargos[formData.familiaCargo].map(cargo => (
                                         <option key={cargo} value={cargo}>{cargo}</option>
                                     ))}
