@@ -28,6 +28,10 @@ public class SolicitudEvaluacion {
     @JoinColumn(name = "responsable_id")
     private Usuario responsable;
 
+    // --- NUEVO: Relación en cascada para eliminar la evaluación asociada ---
+    @OneToOne(mappedBy = "solicitud", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Evaluacion evaluacion;
+
     @Column(nullable = false, length = 100)
     private String cargo;
 
