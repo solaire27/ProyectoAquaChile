@@ -11,3 +11,17 @@
 .idea/
 *.iml
 Backend/target/
+# =========================
+# Seguridad y Credenciales
+# =========================
+.env.docker
+*.env
+*.env.*
+
+# =========================
+# Frontend (React/Vite)
+# =========================
+Frontend/node_modules/
+Frontend/dist/
+Frontend/build/
+npm-debug.log*
