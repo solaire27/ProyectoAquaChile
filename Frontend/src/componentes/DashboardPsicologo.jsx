@@ -2,6 +2,14 @@ import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import './DashboardPsicologo.css';
 
+// Opciones de cargos para el formulario de creación
+const opcionesCargos = {
+    Operativo: ['Operario de Planta', 'Asistente de Producción', 'Técnico de Mantenimiento', 'Operario de Grúa'],
+    Administrativo: ['Asistente Administrativo', 'Analista Contable', 'Recepcionista', 'Ejecutivo de RRHH'],
+    Jefatura: ['Jefe de Turno', 'Jefe de Planta', 'Supervisor de Área', 'Jefe de Logística'],
+    Gerencia: ['Gerente de Operaciones', 'Gerente Comercial', 'Gerente de Finanzas']
+};
+
 const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [solicitudes, setSolicitudes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -9,9 +17,24 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     // Estado para el modal de detalles normal
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     
-    // Estado para el modal de evaluación (al mover a FINALIZADA)
+    // Estado para el modal de confirmación antes de finalizar
+    const [confirmarModal, setConfirmarModal] = useState({ isOpen: false, solicitudId: null });
+
+    // Estado para el modal de evaluación
     const [evaluacionModal, setEvaluacionModal] = useState({ isOpen: false, solicitudId: null });
     const [datosEvaluacion, setDatosEvaluacion] = useState({ resultadoGeneral: 'Apto', observaciones: '' });
+
+    // --- NUEVO: Estado para el modal de Crear Postulación ---
+    const [crearModalOpen, setCrearModalOpen] = useState(false);
+    const [nuevaPostulacion, setNuevaPostulacion] = useState({
+        nombre: '',
+        correo: '',
+        telefono: '',
+        familiaCargo: 'Operativo',
+        cargoPostulacion: opcionesCargos['Operativo'][0]
+    });
+    const [cvFile, setCvFile] = useState(null);
+    const [guardandoPostulacion, setGuardandoPostulacion] = useState(false);
 
     const fetchSolicitudes = async () => {
         setLoading(true);
@@ -36,14 +59,13 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         { key: 'FINALIZADA', titulo: 'Finalizadas', color: '#10b981' }
     ];
 
-    // --- LÓGICA DRAG & DROP NATIVO ---
     const handleDragStart = (e, id, estadoActual) => {
         e.dataTransfer.setData("solicitudId", id.toString());
         e.dataTransfer.setData("estadoActual", estadoActual);
     };
 
     const handleDragOver = (e) => {
-        e.preventDefault(); // Necesario para permitir el drop
+        e.preventDefault();
     };
 
     const handleDrop = async (e, nuevoEstado) => {
@@ -54,18 +76,20 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         if (!id || estadoActual === nuevoEstado) return;
 
         if (nuevoEstado === 'FINALIZADA') {
-            // Cuadro de confirmación antes de proceder
-            const confirmar = window.confirm("¿Estás seguro de que deseas mover esta solicitud a Finalizadas? Deberás registrar un resultado de evaluación.");
-            
-            if (confirmar) {
-                // Si acepta, abre el modal para registrar evaluación
-                setEvaluacionModal({ isOpen: true, solicitudId: id });
-            }
-            // Si cancela, no hace nada y la tarjeta vuelve a su lugar original
+            setConfirmarModal({ isOpen: true, solicitudId: id });
         } else {
-            // Movimiento normal a otras columnas
             actualizarEstado(id, nuevoEstado);
         }
+    };
+
+    const aceptarConfirmacion = () => {
+        const id = confirmarModal.solicitudId;
+        setConfirmarModal({ isOpen: false, solicitudId: null });
+        setEvaluacionModal({ isOpen: true, solicitudId: id });
+    };
+
+    const cancelarConfirmacion = () => {
+        setConfirmarModal({ isOpen: false, solicitudId: null });
     };
 
     const actualizarEstado = async (id, estado) => {
@@ -78,7 +102,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         }
     };
 
-    // --- LÓGICA DE EVALUACIÓN ---
     const enviarEvaluacion = async () => {
         if (!datosEvaluacion.resultadoGeneral.trim()) {
             alert("El resultado general es obligatorio");
@@ -86,17 +109,13 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         }
 
         try {
-            // 1. Registramos la evaluación
             await api.post('/evaluaciones', {
                 solicitudId: parseInt(evaluacionModal.solicitudId),
                 resultadoGeneral: datosEvaluacion.resultadoGeneral,
                 observaciones: datosEvaluacion.observaciones
             });
             
-            // 2. Actualizamos el estado de la solicitud a FINALIZADA
             await actualizarEstado(evaluacionModal.solicitudId, 'FINALIZADA');
-            
-            // 3. Cerramos el modal y limpiamos
             cerrarModalEvaluacion();
         } catch (error) {
             console.error("Error al registrar la evaluación:", error);
@@ -109,7 +128,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         setDatosEvaluacion({ resultadoGeneral: 'Apto', observaciones: '' });
     };
 
-    // --- LÓGICA DE DETALLES Y ELIMINACIÓN ---
     const eliminarSolicitud = async (id, nombre) => {
         if(window.confirm(`¿Estás seguro de que deseas eliminar la solicitud de ${nombre}?`)) {
             try {
@@ -120,6 +138,51 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 console.error("Error al eliminar:", error);
                 alert("No se pudo eliminar la solicitud.");
             }
+        }
+    };
+
+    // --- NUEVO: Lógica para Crear Postulación desde el Dashboard ---
+    const handleCrearChange = (e) => {
+        const { name, value } = e.target;
+        if (name === 'familiaCargo') {
+            setNuevaPostulacion({
+                ...nuevaPostulacion,
+                familiaCargo: value,
+                cargoPostulacion: opcionesCargos[value][0]
+            });
+        } else {
+            setNuevaPostulacion({ ...nuevaPostulacion, [name]: value });
+        }
+    };
+
+    const handleCrearSubmit = async (e) => {
+        e.preventDefault();
+        setGuardandoPostulacion(true);
+
+        try {
+            const data = new FormData();
+            data.append("candidato", new Blob([JSON.stringify(nuevaPostulacion)], { type: "application/json" }));
+            if (cvFile) data.append("cv", cvFile);
+
+            await api.post('/postulaciones/public', data, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            // Limpiar y cerrar
+            setCrearModalOpen(false);
+            setNuevaPostulacion({
+                nombre: '', correo: '', telefono: '',
+                familiaCargo: 'Operativo', cargoPostulacion: opcionesCargos['Operativo'][0]
+            });
+            setCvFile(null);
+            
+            // Recargar tablero
+            fetchSolicitudes();
+        } catch (error) {
+            console.error("Error al crear postulación:", error);
+            alert("Ocurrió un error al crear la postulación.");
+        } finally {
+            setGuardandoPostulacion(false);
         }
     };
 
@@ -135,6 +198,10 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                     <span className="kanban-badge">Portal Psicólogos</span>
                 </div>
                 <div className="user-info">
+                    {/* Botón para crear nueva postulación */}
+                    <button onClick={() => setCrearModalOpen(true)} className="btn-crear">
+                        + Nueva Postulación
+                    </button>
                     <span>{usuario?.nombre || 'Psicólogo Evaluador'}</span>
                     <button onClick={alCerrarSesion} className="btn-logout">Cerrar Sesión</button>
                 </div>
@@ -188,6 +255,100 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 })}
             </main>
 
+            {/* NUEVO: MODAL CREAR POSTULACIÓN */}
+            {crearModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '500px' }}>
+                        <h3>Crear Nueva Postulación</h3>
+                        <form onSubmit={handleCrearSubmit} className="modal-actions" style={{ gap: '12px' }}>
+                            <label>Nombre Completo:</label>
+                            <input 
+                                type="text" 
+                                name="nombre" 
+                                value={nuevaPostulacion.nombre} 
+                                onChange={handleCrearChange} 
+                                required 
+                                className="modal-select"
+                                placeholder="Ej: María González"
+                            />
+
+                            <label>Correo Electrónico:</label>
+                            <input 
+                                type="email" 
+                                name="correo" 
+                                value={nuevaPostulacion.correo} 
+                                onChange={handleCrearChange} 
+                                required 
+                                className="modal-select"
+                                placeholder="correo@ejemplo.com"
+                            />
+
+                            <label>Teléfono:</label>
+                            <input 
+                                type="text" 
+                                name="telefono" 
+                                value={nuevaPostulacion.telefono} 
+                                onChange={handleCrearChange} 
+                                className="modal-select"
+                                placeholder="+56 9 1234 5678"
+                            />
+
+                            <label>Familia de Cargo:</label>
+                            <select 
+                                name="familiaCargo" 
+                                value={nuevaPostulacion.familiaCargo} 
+                                onChange={handleCrearChange}
+                                className="modal-select"
+                            >
+                                {Object.keys(opcionesCargos).map(fam => (
+                                    <option key={fam} value={fam}>{fam}</option>
+                                ))}
+                            </select>
+
+                            <label>Cargo al que postula:</label>
+                            <select 
+                                name="cargoPostulacion" 
+                                value={nuevaPostulacion.cargoPostulacion} 
+                                onChange={handleCrearChange}
+                                className="modal-select"
+                            >
+                                {opcionesCargos[nuevaPostulacion.familiaCargo].map(c => (
+                                    <option key={c} value={c}>{c}</option>
+                                ))}
+                            </select>
+
+                            <label>Adjuntar CV (PDF/Word):</label>
+                            <input 
+                                type="file" 
+                                onChange={(e) => setCvFile(e.target.files[0])} 
+                                accept=".pdf,.doc,.docx"
+                                className="modal-select"
+                            />
+
+                            <div className="modal-buttons" style={{ marginTop: '15px' }}>
+                                <button type="button" onClick={() => setCrearModalOpen(false)} className="btn-cancelar">Cancelar</button>
+                                <button type="submit" disabled={guardandoPostulacion} className="btn-guardar">
+                                    {guardandoPostulacion ? 'Guardando...' : 'Crear Postulación'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL CONFIRMACIÓN AL FINALIZAR */}
+            {confirmarModal.isOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ textAlign: 'center', maxWidth: '350px' }}>
+                        <h3 style={{ marginBottom: '25px', fontSize: '18px' }}>¿Estás seguro de pasar la tarjeta a finalizado?</h3>
+                        <div className="modal-buttons" style={{ justifyContent: 'center', gap: '15px' }}>
+                            <button onClick={cancelarConfirmacion} className="btn-cancelar">Cancelar</button>
+                            <button onClick={aceptarConfirmacion} className="btn-guardar">Aceptar</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* MODAL DETALLES Y ELIMINAR */}
             {solicitudSeleccionada && (
                 <div className="modal-overlay" onClick={() => setSolicitudSeleccionada(null)}>
@@ -197,6 +358,18 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             <p><strong>Candidato:</strong> {solicitudSeleccionada.nombreCandidato}</p>
                             <p><strong>Cargo:</strong> {solicitudSeleccionada.cargo}</p>
                             <p><strong>Estado Actual:</strong> {solicitudSeleccionada.estado}</p>
+                            <p>
+                                <strong>Estado de Aprobación:</strong>{' '}
+                                {solicitudSeleccionada.estado === 'FINALIZADA' 
+                                    ? (solicitudSeleccionada.resultadoEvaluacion || 'Completado') 
+                                    : 'Pendiente'}
+                            </p>
+                            <p>
+                                <strong>Observación:</strong>{' '}
+                                {solicitudSeleccionada.estado === 'FINALIZADA' 
+                                    ? (solicitudSeleccionada.observacionEvaluacion || 'Sin observaciones') 
+                                    : 'Pendiente'}
+                            </p>
                         </div>
                         <div className="modal-buttons" style={{ marginTop: '20px' }}>
                             <button 
