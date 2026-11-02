@@ -20,6 +20,9 @@ function App() {
     navigate('/login'); 
   };
 
+  // Validamos si hay usuario en el estado O si existe un token guardado
+  const estaAutenticado = usuario || localStorage.getItem('token');
+
   return (
     <div style={{ width: '100%', minHeight: '100vh', backgroundColor: '#0b192c' }}>
       <Routes>
@@ -29,7 +32,7 @@ function App() {
         <Route 
           path="/dashboard" 
           element={
-            usuario ? (
+            estaAutenticado ? (
               <DashboardPsicologo usuario={usuario} alCerrarSesion={cerrarSesion} />
             ) : (
               <Navigate to="/login" replace />
