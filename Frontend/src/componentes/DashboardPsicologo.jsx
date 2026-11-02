@@ -9,7 +9,10 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     // Estado para el modal de detalles normal
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     
-    // Estado para el modal de evaluación (al mover a FINALIZADA)
+    // Estado para el nuevo modal de confirmación antes de finalizar
+    const [confirmarModal, setConfirmarModal] = useState({ isOpen: false, solicitudId: null });
+
+    // Estado para el modal de evaluación
     const [evaluacionModal, setEvaluacionModal] = useState({ isOpen: false, solicitudId: null });
     const [datosEvaluacion, setDatosEvaluacion] = useState({ resultadoGeneral: 'Apto', observaciones: '' });
 
@@ -36,14 +39,13 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         { key: 'FINALIZADA', titulo: 'Finalizadas', color: '#10b981' }
     ];
 
-    // --- LÓGICA DRAG & DROP NATIVO ---
     const handleDragStart = (e, id, estadoActual) => {
         e.dataTransfer.setData("solicitudId", id.toString());
         e.dataTransfer.setData("estadoActual", estadoActual);
     };
 
     const handleDragOver = (e) => {
-        e.preventDefault(); // Necesario para permitir el drop
+        e.preventDefault();
     };
 
     const handleDrop = async (e, nuevoEstado) => {
@@ -54,18 +56,23 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         if (!id || estadoActual === nuevoEstado) return;
 
         if (nuevoEstado === 'FINALIZADA') {
-            // Cuadro de confirmación antes de proceder
-            const confirmar = window.confirm("¿Estás seguro de que deseas mover esta solicitud a Finalizadas? Deberás registrar un resultado de evaluación.");
-            
-            if (confirmar) {
-                // Si acepta, abre el modal para registrar evaluación
-                setEvaluacionModal({ isOpen: true, solicitudId: id });
-            }
-            // Si cancela, no hace nada y la tarjeta vuelve a su lugar original
+            // Abre nuestro nuevo modal de confirmación en lugar de window.confirm
+            setConfirmarModal({ isOpen: true, solicitudId: id });
         } else {
-            // Movimiento normal a otras columnas
             actualizarEstado(id, nuevoEstado);
         }
+    };
+
+    const aceptarConfirmacion = () => {
+        // Cierra el aviso y abre el modal de evaluación
+        const id = confirmarModal.solicitudId;
+        setConfirmarModal({ isOpen: false, solicitudId: null });
+        setEvaluacionModal({ isOpen: true, solicitudId: id });
+    };
+
+    const cancelarConfirmacion = () => {
+        // Solo cierra el modal, la tarjeta vuelve a su lugar
+        setConfirmarModal({ isOpen: false, solicitudId: null });
     };
 
     const actualizarEstado = async (id, estado) => {
@@ -78,7 +85,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         }
     };
 
-    // --- LÓGICA DE EVALUACIÓN ---
     const enviarEvaluacion = async () => {
         if (!datosEvaluacion.resultadoGeneral.trim()) {
             alert("El resultado general es obligatorio");
@@ -86,17 +92,13 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         }
 
         try {
-            // 1. Registramos la evaluación
             await api.post('/evaluaciones', {
                 solicitudId: parseInt(evaluacionModal.solicitudId),
                 resultadoGeneral: datosEvaluacion.resultadoGeneral,
                 observaciones: datosEvaluacion.observaciones
             });
             
-            // 2. Actualizamos el estado de la solicitud a FINALIZADA
             await actualizarEstado(evaluacionModal.solicitudId, 'FINALIZADA');
-            
-            // 3. Cerramos el modal y limpiamos
             cerrarModalEvaluacion();
         } catch (error) {
             console.error("Error al registrar la evaluación:", error);
@@ -109,7 +111,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         setDatosEvaluacion({ resultadoGeneral: 'Apto', observaciones: '' });
     };
 
-    // --- LÓGICA DE DETALLES Y ELIMINACIÓN ---
     const eliminarSolicitud = async (id, nombre) => {
         if(window.confirm(`¿Estás seguro de que deseas eliminar la solicitud de ${nombre}?`)) {
             try {
@@ -188,6 +189,19 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 })}
             </main>
 
+            {/* MODAL NUEVO DE CONFIRMACIÓN */}
+            {confirmarModal.isOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ textAlign: 'center', maxWidth: '350px' }}>
+                        <h3 style={{ marginBottom: '25px', fontSize: '18px' }}>¿Estás seguro de pasar la tarjeta a finalizado?</h3>
+                        <div className="modal-buttons" style={{ justifyContent: 'center', gap: '15px' }}>
+                            <button onClick={cancelarConfirmacion} className="btn-cancelar">Cancelar</button>
+                            <button onClick={aceptarConfirmacion} className="btn-guardar">Aceptar</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* MODAL DETALLES Y ELIMINAR */}
             {solicitudSeleccionada && (
                 <div className="modal-overlay" onClick={() => setSolicitudSeleccionada(null)}>
@@ -197,6 +211,20 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             <p><strong>Candidato:</strong> {solicitudSeleccionada.nombreCandidato}</p>
                             <p><strong>Cargo:</strong> {solicitudSeleccionada.cargo}</p>
                             <p><strong>Estado Actual:</strong> {solicitudSeleccionada.estado}</p>
+                            
+                            {/* Nuevos campos dinámicos de aprobación y observación */}
+                            <p>
+                                <strong>Estado de Aprobación:</strong>{' '}
+                                {solicitudSeleccionada.estado === 'FINALIZADA' 
+                                    ? (solicitudSeleccionada.resultadoEvaluacion || 'Completado (Ver BD)') 
+                                    : 'Pendiente'}
+                            </p>
+                            <p>
+                                <strong>Observación:</strong>{' '}
+                                {solicitudSeleccionada.estado === 'FINALIZADA' 
+                                    ? (solicitudSeleccionada.observacionEvaluacion || 'Sin observaciones (Ver BD)') 
+                                    : 'Pendiente'}
+                            </p>
                         </div>
                         <div className="modal-buttons" style={{ marginTop: '20px' }}>
                             <button 
