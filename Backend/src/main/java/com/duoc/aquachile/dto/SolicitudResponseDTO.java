@@ -22,4 +22,8 @@ public class SolicitudResponseDTO {
     private LocalDateTime fechaSolicitud;
     private EstadoSolicitud estado;
     private String observaciones;
+
+    // --- NUEVOS CAMPOS: Datos de la Evaluación ---
+    private String resultadoEvaluacion;
+    private String observacionEvaluacion;
 }

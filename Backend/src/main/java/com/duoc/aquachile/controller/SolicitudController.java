@@ -67,6 +67,13 @@ public class SolicitudController {
         dto.setFechaSolicitud(entidad.getFechaSolicitud());
         dto.setEstado(entidad.getEstado());
         dto.setObservaciones(entidad.getObservaciones());
+
+        // --- NUEVO: Extraer datos de la evaluación si existe ---
+        if (entidad.getEvaluacion() != null) {
+            dto.setResultadoEvaluacion(entidad.getEvaluacion().getResultadoGeneral());
+            dto.setObservacionEvaluacion(entidad.getEvaluacion().getObservaciones());
+        }
+
         return dto;
     }
 }
