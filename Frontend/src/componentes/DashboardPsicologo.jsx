@@ -2,6 +2,14 @@ import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import './DashboardPsicologo.css';
 
+// Opciones de cargos para el formulario de creación
+const opcionesCargos = {
+    Operativo: ['Operario de Planta', 'Asistente de Producción', 'Técnico de Mantenimiento', 'Operario de Grúa'],
+    Administrativo: ['Asistente Administrativo', 'Analista Contable', 'Recepcionista', 'Ejecutivo de RRHH'],
+    Jefatura: ['Jefe de Turno', 'Jefe de Planta', 'Supervisor de Área', 'Jefe de Logística'],
+    Gerencia: ['Gerente de Operaciones', 'Gerente Comercial', 'Gerente de Finanzas']
+};
+
 const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [solicitudes, setSolicitudes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -9,12 +17,24 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     // Estado para el modal de detalles normal
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     
-    // Estado para el nuevo modal de confirmación antes de finalizar
+    // Estado para el modal de confirmación antes de finalizar
     const [confirmarModal, setConfirmarModal] = useState({ isOpen: false, solicitudId: null });
 
     // Estado para el modal de evaluación
     const [evaluacionModal, setEvaluacionModal] = useState({ isOpen: false, solicitudId: null });
     const [datosEvaluacion, setDatosEvaluacion] = useState({ resultadoGeneral: 'Apto', observaciones: '' });
+
+    // --- NUEVO: Estado para el modal de Crear Postulación ---
+    const [crearModalOpen, setCrearModalOpen] = useState(false);
+    const [nuevaPostulacion, setNuevaPostulacion] = useState({
+        nombre: '',
+        correo: '',
+        telefono: '',
+        familiaCargo: 'Operativo',
+        cargoPostulacion: opcionesCargos['Operativo'][0]
+    });
+    const [cvFile, setCvFile] = useState(null);
+    const [guardandoPostulacion, setGuardandoPostulacion] = useState(false);
 
     const fetchSolicitudes = async () => {
         setLoading(true);
@@ -56,7 +76,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         if (!id || estadoActual === nuevoEstado) return;
 
         if (nuevoEstado === 'FINALIZADA') {
-            // Abre nuestro nuevo modal de confirmación en lugar de window.confirm
             setConfirmarModal({ isOpen: true, solicitudId: id });
         } else {
             actualizarEstado(id, nuevoEstado);
@@ -64,14 +83,12 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     };
 
     const aceptarConfirmacion = () => {
-        // Cierra el aviso y abre el modal de evaluación
         const id = confirmarModal.solicitudId;
         setConfirmarModal({ isOpen: false, solicitudId: null });
         setEvaluacionModal({ isOpen: true, solicitudId: id });
     };
 
     const cancelarConfirmacion = () => {
-        // Solo cierra el modal, la tarjeta vuelve a su lugar
         setConfirmarModal({ isOpen: false, solicitudId: null });
     };
 
@@ -124,6 +141,51 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         }
     };
 
+    // --- NUEVO: Lógica para Crear Postulación desde el Dashboard ---
+    const handleCrearChange = (e) => {
+        const { name, value } = e.target;
+        if (name === 'familiaCargo') {
+            setNuevaPostulacion({
+                ...nuevaPostulacion,
+                familiaCargo: value,
+                cargoPostulacion: opcionesCargos[value][0]
+            });
+        } else {
+            setNuevaPostulacion({ ...nuevaPostulacion, [name]: value });
+        }
+    };
+
+    const handleCrearSubmit = async (e) => {
+        e.preventDefault();
+        setGuardandoPostulacion(true);
+
+        try {
+            const data = new FormData();
+            data.append("candidato", new Blob([JSON.stringify(nuevaPostulacion)], { type: "application/json" }));
+            if (cvFile) data.append("cv", cvFile);
+
+            await api.post('/postulaciones/public', data, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            // Limpiar y cerrar
+            setCrearModalOpen(false);
+            setNuevaPostulacion({
+                nombre: '', correo: '', telefono: '',
+                familiaCargo: 'Operativo', cargoPostulacion: opcionesCargos['Operativo'][0]
+            });
+            setCvFile(null);
+            
+            // Recargar tablero
+            fetchSolicitudes();
+        } catch (error) {
+            console.error("Error al crear postulación:", error);
+            alert("Ocurrió un error al crear la postulación.");
+        } finally {
+            setGuardandoPostulacion(false);
+        }
+    };
+
     if (loading && solicitudes.length === 0) {
         return <div className="kanban-loading">Cargando tablero Kanban...</div>;
     }
@@ -136,6 +198,10 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                     <span className="kanban-badge">Portal Psicólogos</span>
                 </div>
                 <div className="user-info">
+                    {/* Botón para crear nueva postulación */}
+                    <button onClick={() => setCrearModalOpen(true)} className="btn-crear">
+                        + Nueva Postulación
+                    </button>
                     <span>{usuario?.nombre || 'Psicólogo Evaluador'}</span>
                     <button onClick={alCerrarSesion} className="btn-logout">Cerrar Sesión</button>
                 </div>
@@ -189,7 +255,88 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 })}
             </main>
 
-            {/* MODAL NUEVO DE CONFIRMACIÓN */}
+            {/* NUEVO: MODAL CREAR POSTULACIÓN */}
+            {crearModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '500px' }}>
+                        <h3>Crear Nueva Postulación</h3>
+                        <form onSubmit={handleCrearSubmit} className="modal-actions" style={{ gap: '12px' }}>
+                            <label>Nombre Completo:</label>
+                            <input 
+                                type="text" 
+                                name="nombre" 
+                                value={nuevaPostulacion.nombre} 
+                                onChange={handleCrearChange} 
+                                required 
+                                className="modal-select"
+                                placeholder="Ej: María González"
+                            />
+
+                            <label>Correo Electrónico:</label>
+                            <input 
+                                type="email" 
+                                name="correo" 
+                                value={nuevaPostulacion.correo} 
+                                onChange={handleCrearChange} 
+                                required 
+                                className="modal-select"
+                                placeholder="correo@ejemplo.com"
+                            />
+
+                            <label>Teléfono:</label>
+                            <input 
+                                type="text" 
+                                name="telefono" 
+                                value={nuevaPostulacion.telefono} 
+                                onChange={handleCrearChange} 
+                                className="modal-select"
+                                placeholder="+56 9 1234 5678"
+                            />
+
+                            <label>Familia de Cargo:</label>
+                            <select 
+                                name="familiaCargo" 
+                                value={nuevaPostulacion.familiaCargo} 
+                                onChange={handleCrearChange}
+                                className="modal-select"
+                            >
+                                {Object.keys(opcionesCargos).map(fam => (
+                                    <option key={fam} value={fam}>{fam}</option>
+                                ))}
+                            </select>
+
+                            <label>Cargo al que postula:</label>
+                            <select 
+                                name="cargoPostulacion" 
+                                value={nuevaPostulacion.cargoPostulacion} 
+                                onChange={handleCrearChange}
+                                className="modal-select"
+                            >
+                                {opcionesCargos[nuevaPostulacion.familiaCargo].map(c => (
+                                    <option key={c} value={c}>{c}</option>
+                                ))}
+                            </select>
+
+                            <label>Adjuntar CV (PDF/Word):</label>
+                            <input 
+                                type="file" 
+                                onChange={(e) => setCvFile(e.target.files[0])} 
+                                accept=".pdf,.doc,.docx"
+                                className="modal-select"
+                            />
+
+                            <div className="modal-buttons" style={{ marginTop: '15px' }}>
+                                <button type="button" onClick={() => setCrearModalOpen(false)} className="btn-cancelar">Cancelar</button>
+                                <button type="submit" disabled={guardandoPostulacion} className="btn-guardar">
+                                    {guardandoPostulacion ? 'Guardando...' : 'Crear Postulación'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL CONFIRMACIÓN AL FINALIZAR */}
             {confirmarModal.isOpen && (
                 <div className="modal-overlay">
                     <div className="modal-content" style={{ textAlign: 'center', maxWidth: '350px' }}>
@@ -211,18 +358,16 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             <p><strong>Candidato:</strong> {solicitudSeleccionada.nombreCandidato}</p>
                             <p><strong>Cargo:</strong> {solicitudSeleccionada.cargo}</p>
                             <p><strong>Estado Actual:</strong> {solicitudSeleccionada.estado}</p>
-                            
-                            {/* Nuevos campos dinámicos de aprobación y observación */}
                             <p>
                                 <strong>Estado de Aprobación:</strong>{' '}
                                 {solicitudSeleccionada.estado === 'FINALIZADA' 
-                                    ? (solicitudSeleccionada.resultadoEvaluacion || 'Completado (Ver BD)') 
+                                    ? (solicitudSeleccionada.resultadoEvaluacion || 'Completado') 
                                     : 'Pendiente'}
                             </p>
                             <p>
                                 <strong>Observación:</strong>{' '}
                                 {solicitudSeleccionada.estado === 'FINALIZADA' 
-                                    ? (solicitudSeleccionada.observacionEvaluacion || 'Sin observaciones (Ver BD)') 
+                                    ? (solicitudSeleccionada.observacionEvaluacion || 'Sin observaciones') 
                                     : 'Pendiente'}
                             </p>
                         </div>

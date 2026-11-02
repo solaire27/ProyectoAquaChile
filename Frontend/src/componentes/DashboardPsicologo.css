@@ -293,3 +293,20 @@
 .btn-eliminar:hover {
   background: #dc2626;
 }
+/* Botón para crear nueva postulación */
+.btn-crear {
+  background-color: #0284c7;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-right: 8px;
+}
+
+.btn-crear:hover {
+  background-color: #0369a1;
+}
