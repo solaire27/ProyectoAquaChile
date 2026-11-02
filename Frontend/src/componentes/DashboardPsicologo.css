@@ -254,3 +254,42 @@
 .btn-eliminar:hover {
   background: #dc2626 !important;
 }
+
+/* Estilos Drag & Drop */
+.kanban-card {
+  cursor: grab;
+}
+.kanban-card:active {
+  cursor: grabbing;
+}
+.kanban-column {
+  transition: background-color 0.2s;
+}
+
+/* Estilos de inputs del Modal Evaluación */
+.modal-textarea {
+  padding: 10px;
+  background: #0f172a;
+  color: white;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  resize: vertical;
+  font-family: inherit;
+}
+.modal-textarea:focus, .modal-select:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+
+.btn-eliminar {
+  background: #ef4444;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-right: auto;
+}
+.btn-eliminar:hover {
+  background: #dc2626;
+}

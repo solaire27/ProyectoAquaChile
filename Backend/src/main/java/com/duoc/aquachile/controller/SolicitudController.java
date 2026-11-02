@@ -19,6 +19,12 @@ import java.util.stream.Collectors;
 public class SolicitudController {
 
     private final SolicitudService solicitudService;
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        solicitudService.eliminarSolicitud(id);
+        return ResponseEntity.noContent().build();
+    }
 
     public SolicitudController(SolicitudService solicitudService) {
         this.solicitudService = solicitudService;

@@ -76,4 +76,9 @@ public class SolicitudService {
 
         return solicitudRepository.save(solicitud);
     }
+
+    public void eliminarSolicitud(Long id) {
+        SolicitudEvaluacion solicitud = obtenerPorId(id);
+        solicitudRepository.delete(solicitud);
+    }
 }
