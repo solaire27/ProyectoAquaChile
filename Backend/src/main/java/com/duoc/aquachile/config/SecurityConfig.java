@@ -35,8 +35,7 @@ public class SecurityConfig {
                 // 2. Proteger las rutas
                 .authorizeHttpRequests(auth -> auth
                         // Rutas públicas que no piden token (Login y formulario de postulación)
-                        .requestMatchers("/api/auth/**", "/api/postulaciones/public").permitAll()
-
+                        .requestMatchers("/api/auth/**", "/api/postulaciones/public", "/api/ofertas/public").permitAll()
                         // Todo lo demás REQUIERE estar autenticado con un token válido
                         .anyRequest().authenticated()
                 )
