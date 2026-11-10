@@ -9,4 +9,6 @@ public class SolicitudEstadoUpdateDTO {
 
     @NotNull(message = "El nuevo estado es obligatorio")
     private EstadoSolicitud estado;
+
+    private Long responsableId;
 }

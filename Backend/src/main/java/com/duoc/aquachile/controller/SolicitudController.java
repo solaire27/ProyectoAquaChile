@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 public class SolicitudController {
 
     private final SolicitudService solicitudService;
-    
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         solicitudService.eliminarSolicitud(id);
@@ -29,12 +30,13 @@ public class SolicitudController {
     public SolicitudController(SolicitudService solicitudService) {
         this.solicitudService = solicitudService;
     }
+    @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO', 'ANALISTA')")
     @PostMapping
     public ResponseEntity<SolicitudResponseDTO> crear(@Valid @RequestBody SolicitudRequestDTO dto) {
         SolicitudEvaluacion creada = solicitudService.crearSolicitud(dto);
         return new ResponseEntity<>(mapearAResponse(creada), HttpStatus.CREATED);
     }
-
+    @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO')")
     @GetMapping
     public ResponseEntity<List<SolicitudResponseDTO>> listar() {
         List<SolicitudResponseDTO> lista = solicitudService.obtenerTodas().stream()
@@ -42,14 +44,16 @@ public class SolicitudController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(lista);
     }
-
+    @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO')")
     @GetMapping("/{id}")
     public ResponseEntity<SolicitudResponseDTO> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(mapearAResponse(solicitudService.obtenerPorId(id)));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO')")
     @PatchMapping("/{id}/estado")
     public ResponseEntity<SolicitudResponseDTO> actualizarEstado(@PathVariable Long id, @Valid @RequestBody SolicitudEstadoUpdateDTO dto) {
+        // Tu DTO ahora trae el responsableId opcional. El servicio se encargará del resto.
         return ResponseEntity.ok(mapearAResponse(solicitudService.actualizarEstado(id, dto)));
     }
 
