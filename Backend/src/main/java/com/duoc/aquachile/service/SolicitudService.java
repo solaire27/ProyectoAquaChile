@@ -19,14 +19,17 @@ public class SolicitudService {
     private final SolicitudRepository solicitudRepository;
     private final CandidatoService candidatoService;
     private final UsuarioRepository usuarioRepository;
+    private final AiService aiService;
 
     public SolicitudService(
             SolicitudRepository solicitudRepository,
             CandidatoService candidatoService,
-            UsuarioRepository usuarioRepository) {
+            UsuarioRepository usuarioRepository,
+            AiService aiService) {
         this.solicitudRepository = solicitudRepository;
         this.candidatoService = candidatoService;
         this.usuarioRepository = usuarioRepository;
+        this.aiService = aiService;
     }
 
     public SolicitudEvaluacion crearSolicitud(SolicitudRequestDTO dto) {
@@ -61,13 +64,28 @@ public class SolicitudService {
         SolicitudEvaluacion solicitud = obtenerPorId(id);
         solicitud.setEstado(dto.getEstado());
 
-        // --- Lógica de Asignación Dinámica ---
+        // --- 1. Lógica de Asignación Dinámica (Semana 2) ---
         // Si el frontend envía un responsableId (Admin asignando o Psicólogo auto-asignándose),
         // se busca en la BD y se asocia a la solicitud.
         if (dto.getResponsableId() != null) {
             Usuario responsable = usuarioRepository.findById(dto.getResponsableId())
                     .orElseThrow(() -> new ResourceNotFoundException("Usuario responsable no encontrado con ID: " + dto.getResponsableId()));
             solicitud.setResponsable(responsable);
+        }
+
+        // --- 2. Integración de Agente de IA (Semana 3) ---
+        // Se dispara al pasar a etapa de evaluación (verifica si en tu Enum se llama EN_PROCESO o EN_EVALUACION)
+        // y solo si aún no tiene una recomendación generada para no gastar peticiones duplicadas.
+        if (dto.getEstado() == EstadoSolicitud.EN_PROCESO && solicitud.getRecomendacionIa() == null) {
+            if (solicitud.getCandidato() != null && solicitud.getCandidato().getUrlCv() != null) {
+                String recomendacion = aiService.evaluarCvConIA(
+                        solicitud.getCandidato().getUrlCv(),
+                        solicitud.getCargo()
+                );
+                solicitud.setRecomendacionIa(recomendacion);
+            } else {
+                solicitud.setRecomendacionIa("El candidato no adjuntó un archivo CV para analizar.");
+            }
         }
 
         return solicitudRepository.save(solicitud);
@@ -91,5 +109,12 @@ public class SolicitudService {
     public void eliminarSolicitud(Long id) {
         SolicitudEvaluacion solicitud = obtenerPorId(id);
         solicitudRepository.delete(solicitud);
+    }
+    public String consultarEstadoPublico( String identificador, String correo) {
+        SolicitudEvaluacion solicitud = solicitudRepository
+                .findFirstByCandidatoNombreIgnoreCaseAndCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(identificador, correo)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontraron postulaciones asociadas a los datos ingresados"));
+
+        return solicitud.getEstado().name();
     }
 }

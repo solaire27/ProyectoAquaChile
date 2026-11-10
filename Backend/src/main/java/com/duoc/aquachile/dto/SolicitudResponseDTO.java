@@ -23,7 +23,10 @@ public class SolicitudResponseDTO {
     private EstadoSolicitud estado;
     private String observaciones;
 
-    // --- NUEVOS CAMPOS: Datos de la Evaluación ---
+    // --- Datos de la Evaluación ---
     private String resultadoEvaluacion;
     private String observacionEvaluacion;
+
+    // --- NUEVO: Recomendación del Agente IA ---
+    private String recomendacionIa;
 }

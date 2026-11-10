@@ -49,4 +49,6 @@ public class SolicitudEvaluacion {
 
     @Column(length = 500)
     private String observaciones;
+    @Column(name = "recomendacion_ia", columnDefinition = "TEXT")
+    private String recomendacionIa;
 }

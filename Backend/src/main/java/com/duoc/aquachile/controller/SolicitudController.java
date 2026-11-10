@@ -78,6 +78,9 @@ public class SolicitudController {
             dto.setObservacionEvaluacion(entidad.getEvaluacion().getObservaciones());
         }
 
+        // Mapear la recomendación de la IA
+        dto.setRecomendacionIa(entidad.getRecomendacionIa());
+
         return dto;
     }
 }
