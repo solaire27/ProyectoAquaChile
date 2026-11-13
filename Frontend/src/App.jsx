@@ -4,6 +4,9 @@ import InicioPublico from './componentes/InicioPublico';
 import PostulacionPublica from './componentes/PostulacionPublica';
 import DashboardPsicologo from './componentes/DashboardPsicologo';
 import Login from './componentes/Login';
+import SobreNosotros from './componentes/SobreNosotros';
+import CargosDisponibles from './componentes/CargosDisponibles';
+import EstadoPostulacion from './componentes/EstadoPostulacion';
 
 function App() {
   const [usuario, setUsuario] = useState(null);
@@ -20,7 +23,6 @@ function App() {
     navigate('/login'); 
   };
 
-  // Validamos si hay usuario en el estado O si existe un token guardado
   const estaAutenticado = usuario || localStorage.getItem('token');
 
   return (
@@ -28,6 +30,10 @@ function App() {
       <Routes>
         <Route path="/" element={<InicioPublico />} />
         <Route path="/postular" element={<PostulacionPublica />} />
+        <Route path="/sobre-nosotros" element={<SobreNosotros />} />
+        <Route path="/cargos" element={<CargosDisponibles />} />
+        <Route path="/estado" element={<EstadoPostulacion />} />
+        
         <Route path="/login" element={<Login alAutenticar={manejarAutenticacion} />} />
         <Route 
           path="/dashboard" 

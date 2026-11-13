@@ -24,7 +24,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [evaluacionModal, setEvaluacionModal] = useState({ isOpen: false, solicitudId: null });
     const [datosEvaluacion, setDatosEvaluacion] = useState({ resultadoGeneral: 'Apto', observaciones: '' });
 
-    // --- NUEVO: Estado para el modal de Crear Postulación ---
+    // Estado para el modal de Crear Postulación
     const [crearModalOpen, setCrearModalOpen] = useState(false);
     const [nuevaPostulacion, setNuevaPostulacion] = useState({
         nombre: '',
@@ -141,7 +141,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         }
     };
 
-    // --- NUEVO: Lógica para Crear Postulación desde el Dashboard ---
     const handleCrearChange = (e) => {
         const { name, value } = e.target;
         if (name === 'familiaCargo') {
@@ -255,7 +254,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 })}
             </main>
 
-            {/* NUEVO: MODAL CREAR POSTULACIÓN */}
+            {/* MODAL CREAR POSTULACIÓN */}
             {crearModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-content" style={{ maxWidth: '500px' }}>
@@ -357,6 +356,12 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                         <div className="modal-info">
                             <p><strong>Candidato:</strong> {solicitudSeleccionada.nombreCandidato}</p>
                             <p><strong>Cargo:</strong> {solicitudSeleccionada.cargo}</p>
+                            <p>
+                                <strong>Fecha de Postulación:</strong>{' '}
+                                {solicitudSeleccionada.fechaSolicitud 
+                                    ? new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(solicitudSeleccionada.fechaSolicitud))
+                                    : 'Desconocida'}
+                            </p>
                             <p><strong>Estado Actual:</strong> {solicitudSeleccionada.estado}</p>
                             <p>
                                 <strong>Estado de Aprobación:</strong>{' '}

@@ -1,0 +1,196 @@
+.sobre-nosotros-page {
+  width: 100vw;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  position: relative;
+}
+
+.sobre-nosotros-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 420px;
+  background: linear-gradient(135deg, #0a192f 0%, #0284c7 100%);
+  border-radius: 0 0 50% 50% / 0 0 60px 60px;
+  z-index: 0;
+}
+
+.navbar-landing, 
+.about-hero, 
+.about-main, 
+.footer-landing {
+  position: relative;
+  z-index: 1;
+}
+
+/* Modificación clave para eliminar la barra blanca y hacer el logo blanco */
+.navbar-landing.dark-nav {
+  background: transparent !important; 
+  border: none;
+  box-shadow: none;
+  padding-top: 20px; /* Añade un poco de espacio arriba */
+}
+
+/* Forzar que el texto del logo sea blanco en esta pantalla */
+.sobre-nosotros-page .logo-text {
+  color: #ffffff !important;
+}
+
+.about-hero {
+  padding: 10px 20px 20px; /* Reducido el padding top para subir el contenido */
+  text-align: center;
+}
+
+.about-hero-content h1 {
+  color: #ffffff;
+  font-size: 2.8rem;
+  font-weight: 800;
+  margin-bottom: 15px;
+  letter-spacing: -0.5px;
+}
+
+.about-hero-content p {
+  color: #e0f2fe;
+  font-size: 1.15rem;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.about-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0px 20px 80px; /* Padding top a 0 para subir las tarjetas */
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+  gap: 30px;
+}
+
+.about-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  padding: 40px;
+  width: 100%;
+}
+
+.main-about-card {
+  text-align: center;
+}
+
+.main-about-card h2 {
+  color: #0f172a;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 25px;
+}
+
+.main-about-card p {
+  color: #475569;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin-bottom: 15px;
+}
+
+.main-about-card p:last-child {
+  margin-bottom: 0;
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  width: 100%;
+}
+
+.grid-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 35px 25px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.grid-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+}
+
+.card-icon-wrapper {
+  width: 70px;
+  height: 70px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  margin-bottom: 20px;
+}
+
+.mission-icon {
+  background-color: #f0f9ff;
+  color: #0ea5e9;
+}
+
+.vision-icon {
+  background-color: #f5f3ff;
+  color: #8b5cf6;
+}
+
+.values-icon {
+  background-color: #fff1f2;
+  color: #f43f5e;
+}
+
+.grid-card h3 {
+  color: #0f172a;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+.grid-card p {
+  color: #64748b;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.footer-landing {
+  text-align: center;
+  padding: 20px;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: auto;
+}
+
+@media (max-width: 768px) {
+  .sobre-nosotros-page::before {
+    height: 380px;
+    border-radius: 0 0 50% 50% / 0 0 40px 40px;
+  }
+  
+  .about-hero {
+    padding: 10px 20px 10px;
+  }
+  
+  .about-hero-content h1 {
+    font-size: 2.2rem;
+  }
+  
+  .about-main {
+    padding: 0px 15px 60px;
+  }
+  
+  .about-card {
+    padding: 25px 20px;
+  }
+}
