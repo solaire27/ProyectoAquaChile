@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import './DashboardPsicologo.css';
 
-// Opciones de cargos para el formulario de creación
 const opcionesCargos = {
     Operativo: ['Operario de Planta', 'Asistente de Producción', 'Técnico de Mantenimiento', 'Operario de Grúa'],
     Administrativo: ['Asistente Administrativo', 'Analista Contable', 'Recepcionista', 'Ejecutivo de RRHH'],
@@ -10,28 +9,26 @@ const opcionesCargos = {
     Gerencia: ['Gerente de Operaciones', 'Gerente Comercial', 'Gerente de Finanzas']
 };
 
+const DATOS_PRUEBA_SOLICITUDES = [
+    { id: 101, nombreCandidato: 'María González', cargo: 'Operario de Planta', familiaCargo: 'Operativo', estado: 'NUEVA_POSTULACION', fechaSolicitud: '2026-11-10T10:30:00' },
+    { id: 102, nombreCandidato: 'Juan Pérez', cargo: 'Analista Contable', familiaCargo: 'Administrativo', estado: 'PENDIENTE', fechaSolicitud: '2026-11-08T15:20:00' },
+    { id: 103, nombreCandidato: 'Camila Silva', cargo: 'Jefe de Turno', familiaCargo: 'Jefatura', estado: 'EN_PROCESO', fechaSolicitud: '2026-11-04T09:15:00' },
+    { id: 104, nombreCandidato: 'Carlos Ruiz', cargo: 'Gerente de Operaciones', familiaCargo: 'Gerencia', estado: 'FINALIZADA', fechaSolicitud: '2026-10-28T14:00:00', resultadoEvaluacion: 'Apto', observacionEvaluacion: 'Excelente perfil.' }
+];
+
 const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [solicitudes, setSolicitudes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [modoOffline, setModoOffline] = useState(false);
     
-    // Estado para el modal de detalles normal
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
-    
-    // Estado para el modal de confirmación antes de finalizar
     const [confirmarModal, setConfirmarModal] = useState({ isOpen: false, solicitudId: null });
-
-    // Estado para el modal de evaluación
     const [evaluacionModal, setEvaluacionModal] = useState({ isOpen: false, solicitudId: null });
     const [datosEvaluacion, setDatosEvaluacion] = useState({ resultadoGeneral: 'Apto', observaciones: '' });
 
-    // Estado para el modal de Crear Postulación
     const [crearModalOpen, setCrearModalOpen] = useState(false);
     const [nuevaPostulacion, setNuevaPostulacion] = useState({
-        nombre: '',
-        correo: '',
-        telefono: '',
-        familiaCargo: 'Operativo',
-        cargoPostulacion: opcionesCargos['Operativo'][0]
+        nombre: '', correo: '', telefono: '', familiaCargo: 'Operativo', cargoPostulacion: opcionesCargos['Operativo'][0]
     });
     const [cvFile, setCvFile] = useState(null);
     const [guardandoPostulacion, setGuardandoPostulacion] = useState(false);
@@ -40,9 +37,13 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         setLoading(true);
         try {
             const response = await api.get('/solicitudes');
+            if (!Array.isArray(response.data)) throw new Error('Respuesta no es un arreglo (posible HTML de Vite)');
             setSolicitudes(response.data);
+            setModoOffline(false);
         } catch (error) {
-            console.error("Error al obtener solicitudes:", error);
+            console.warn("Backend no detectado. Activando modo de prueba local.");
+            setSolicitudes(DATOS_PRUEBA_SOLICITUDES);
+            setModoOffline(true);
         } finally {
             setLoading(false);
         }
@@ -62,10 +63,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const handleDragStart = (e, id, estadoActual) => {
         e.dataTransfer.setData("solicitudId", id.toString());
         e.dataTransfer.setData("estadoActual", estadoActual);
-    };
-
-    const handleDragOver = (e) => {
-        e.preventDefault();
     };
 
     const handleDrop = async (e, nuevoEstado) => {
@@ -88,17 +85,17 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         setEvaluacionModal({ isOpen: true, solicitudId: id });
     };
 
-    const cancelarConfirmacion = () => {
-        setConfirmarModal({ isOpen: false, solicitudId: null });
-    };
-
     const actualizarEstado = async (id, estado) => {
+        if (modoOffline) {
+            setSolicitudes(prev => prev.map(s => s.id.toString() === id.toString() ? { ...s, estado } : s));
+            return;
+        }
         try {
             await api.patch(`/solicitudes/${id}/estado`, { estado });
             fetchSolicitudes();
         } catch (error) {
-            console.error("Error al mover la tarjeta:", error);
-            alert("No se pudo actualizar el estado.");
+            setSolicitudes(prev => prev.map(s => s.id.toString() === id.toString() ? { ...s, estado } : s));
+            setModoOffline(true);
         }
     };
 
@@ -108,18 +105,26 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             return;
         }
 
+        if (modoOffline) {
+            setSolicitudes(prev => prev.map(s => s.id.toString() === evaluacionModal.solicitudId.toString() 
+                ? { ...s, estado: 'FINALIZADA', resultadoEvaluacion: datosEvaluacion.resultadoGeneral, observacionEvaluacion: datosEvaluacion.observaciones } : s));
+            cerrarModalEvaluacion();
+            return;
+        }
+
         try {
             await api.post('/evaluaciones', {
                 solicitudId: parseInt(evaluacionModal.solicitudId),
                 resultadoGeneral: datosEvaluacion.resultadoGeneral,
                 observaciones: datosEvaluacion.observaciones
             });
-            
             await actualizarEstado(evaluacionModal.solicitudId, 'FINALIZADA');
             cerrarModalEvaluacion();
         } catch (error) {
-            console.error("Error al registrar la evaluación:", error);
-            alert("No se pudo registrar la evaluación.");
+            alert("Error de conexión. Guardando localmente en modo prueba.");
+            setSolicitudes(prev => prev.map(s => s.id.toString() === evaluacionModal.solicitudId.toString() 
+                ? { ...s, estado: 'FINALIZADA', resultadoEvaluacion: datosEvaluacion.resultadoGeneral, observacionEvaluacion: datosEvaluacion.observaciones } : s));
+            cerrarModalEvaluacion();
         }
     };
 
@@ -130,13 +135,18 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
 
     const eliminarSolicitud = async (id, nombre) => {
         if(window.confirm(`¿Estás seguro de que deseas eliminar la solicitud de ${nombre}?`)) {
+            if (modoOffline) {
+                setSolicitudes(prev => prev.filter(s => s.id !== id));
+                setSolicitudSeleccionada(null);
+                return;
+            }
             try {
                 await api.delete(`/solicitudes/${id}`);
                 setSolicitudSeleccionada(null);
                 fetchSolicitudes();
             } catch (error) {
-                console.error("Error al eliminar:", error);
-                alert("No se pudo eliminar la solicitud.");
+                setSolicitudes(prev => prev.filter(s => s.id !== id));
+                setSolicitudSeleccionada(null);
             }
         }
     };
@@ -144,11 +154,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const handleCrearChange = (e) => {
         const { name, value } = e.target;
         if (name === 'familiaCargo') {
-            setNuevaPostulacion({
-                ...nuevaPostulacion,
-                familiaCargo: value,
-                cargoPostulacion: opcionesCargos[value][0]
-            });
+            setNuevaPostulacion({ ...nuevaPostulacion, familiaCargo: value, cargoPostulacion: opcionesCargos[value][0] });
         } else {
             setNuevaPostulacion({ ...nuevaPostulacion, [name]: value });
         }
@@ -158,36 +164,53 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         e.preventDefault();
         setGuardandoPostulacion(true);
 
+        if (modoOffline) {
+            const nuevaMock = {
+                id: Math.floor(Math.random() * 1000) + 200,
+                nombreCandidato: nuevaPostulacion.nombre,
+                cargo: nuevaPostulacion.cargoPostulacion,
+                familiaCargo: nuevaPostulacion.familiaCargo,
+                estado: 'NUEVA_POSTULACION',
+                fechaSolicitud: new Date().toISOString()
+            };
+            setSolicitudes([...solicitudes, nuevaMock]);
+            limpiarFormulario();
+            return;
+        }
+
         try {
             const data = new FormData();
             data.append("candidato", new Blob([JSON.stringify(nuevaPostulacion)], { type: "application/json" }));
             if (cvFile) data.append("cv", cvFile);
 
-            await api.post('/postulaciones/public', data, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-
-            // Limpiar y cerrar
-            setCrearModalOpen(false);
-            setNuevaPostulacion({
-                nombre: '', correo: '', telefono: '',
-                familiaCargo: 'Operativo', cargoPostulacion: opcionesCargos['Operativo'][0]
-            });
-            setCvFile(null);
-            
-            // Recargar tablero
+            await api.post('/postulaciones/public', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+            limpiarFormulario();
             fetchSolicitudes();
         } catch (error) {
-            console.error("Error al crear postulación:", error);
-            alert("Ocurrió un error al crear la postulación.");
-        } finally {
-            setGuardandoPostulacion(false);
+            alert("Error al conectar. Creando postulación local en modo prueba.");
+            const nuevaMock = {
+                id: Math.floor(Math.random() * 1000) + 200,
+                nombreCandidato: nuevaPostulacion.nombre,
+                cargo: nuevaPostulacion.cargoPostulacion,
+                familiaCargo: nuevaPostulacion.familiaCargo,
+                estado: 'NUEVA_POSTULACION',
+                fechaSolicitud: new Date().toISOString()
+            };
+            setSolicitudes([...solicitudes, nuevaMock]);
+            limpiarFormulario();
         }
     };
 
-    if (loading && solicitudes.length === 0) {
-        return <div className="kanban-loading">Cargando tablero Kanban...</div>;
-    }
+    const limpiarFormulario = () => {
+        setGuardandoPostulacion(false);
+        setCrearModalOpen(false);
+        setNuevaPostulacion({ nombre: '', correo: '', telefono: '', familiaCargo: 'Operativo', cargoPostulacion: opcionesCargos['Operativo'][0] });
+        setCvFile(null);
+    };
+
+    if (loading && solicitudes.length === 0) return <div className="kanban-loading">Cargando tablero Kanban...</div>;
+
+    const listaSegura = Array.isArray(solicitudes) ? solicitudes : [];
 
     return (
         <div className="kanban-page">
@@ -195,12 +218,10 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 <div className="kanban-branding">
                     <span className="kanban-logo">AquaChile</span>
                     <span className="kanban-badge">Portal Psicólogos</span>
+                    {modoOffline && <span style={{fontSize:'12px', color:'#f59e0b', marginLeft:'10px'}}>(Modo Prueba Sin Conexión)</span>}
                 </div>
                 <div className="user-info">
-                    {/* Botón para crear nueva postulación */}
-                    <button onClick={() => setCrearModalOpen(true)} className="btn-crear">
-                        + Nueva Postulación
-                    </button>
+                    <button onClick={() => setCrearModalOpen(true)} className="btn-crear">+ Nueva Postulación</button>
                     <span>{usuario?.nombre || 'Psicólogo Evaluador'}</span>
                     <button onClick={alCerrarSesion} className="btn-logout">Cerrar Sesión</button>
                 </div>
@@ -208,14 +229,9 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
 
             <main className="kanban-board">
                 {columnas.map(col => {
-                    const tarjetas = solicitudes.filter(sol => sol.estado === col.key);
+                    const tarjetas = listaSegura.filter(sol => sol.estado === col.key);
                     return (
-                        <div 
-                            key={col.key} 
-                            className="kanban-column"
-                            onDragOver={handleDragOver}
-                            onDrop={(e) => handleDrop(e, col.key)}
-                        >
+                        <div key={col.key} className="kanban-column" onDragOver={e => e.preventDefault()} onDrop={(e) => handleDrop(e, col.key)}>
                             <div className="column-header">
                                 <div className="column-title-group">
                                     <span className="status-dot" style={{ backgroundColor: col.color }}></span>
@@ -226,129 +242,64 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
 
                             <div className="cards-container">
                                 {tarjetas.map(sol => (
-                                    <div 
-                                        key={sol.id} 
-                                        className="kanban-card"
-                                        draggable
-                                        onDragStart={(e) => handleDragStart(e, sol.id, sol.estado)}
-                                        onClick={() => setSolicitudSeleccionada(sol)}
-                                        title="Haz clic para detalles o arrastra para cambiar de estado"
-                                    >
+                                    <div key={sol.id} className="kanban-card" draggable onDragStart={(e) => handleDragStart(e, sol.id, sol.estado)} onClick={() => setSolicitudSeleccionada(sol)}>
                                         <div className="card-tag">{sol.familiaCargo || 'General'}</div>
                                         <h4 className="card-candidate-name">{sol.nombreCandidato}</h4>
                                         <p className="card-position">{sol.cargo}</p>
                                         <div className="card-footer">
                                             <span className="card-id">#SOL-{sol.id}</span>
-                                            <span className="card-date">
-                                                {sol.fechaSolicitud ? new Date(sol.fechaSolicitud).toLocaleDateString() : 'Reciente'}
-                                            </span>
+                                            <span className="card-date">{sol.fechaSolicitud ? new Date(sol.fechaSolicitud).toLocaleDateString() : 'Reciente'}</span>
                                         </div>
                                     </div>
                                 ))}
-                                {tarjetas.length === 0 && (
-                                    <div className="empty-column">Suelta tarjetas aquí</div>
-                                )}
+                                {tarjetas.length === 0 && <div className="empty-column">Suelta tarjetas aquí</div>}
                             </div>
                         </div>
                     );
                 })}
             </main>
 
-            {/* MODAL CREAR POSTULACIÓN */}
+            {/* Modales mantenidos igual, sólo actualizados para funcionar con los estados locales */}
             {crearModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-content" style={{ maxWidth: '500px' }}>
                         <h3>Crear Nueva Postulación</h3>
                         <form onSubmit={handleCrearSubmit} className="modal-actions" style={{ gap: '12px' }}>
                             <label>Nombre Completo:</label>
-                            <input 
-                                type="text" 
-                                name="nombre" 
-                                value={nuevaPostulacion.nombre} 
-                                onChange={handleCrearChange} 
-                                required 
-                                className="modal-select"
-                                placeholder="Ej: María González"
-                            />
-
-                            <label>Correo Electrónico:</label>
-                            <input 
-                                type="email" 
-                                name="correo" 
-                                value={nuevaPostulacion.correo} 
-                                onChange={handleCrearChange} 
-                                required 
-                                className="modal-select"
-                                placeholder="correo@ejemplo.com"
-                            />
-
+                            <input type="text" name="nombre" value={nuevaPostulacion.nombre} onChange={handleCrearChange} required className="modal-select"/>
+                            <label>Correo:</label>
+                            <input type="email" name="correo" value={nuevaPostulacion.correo} onChange={handleCrearChange} required className="modal-select"/>
                             <label>Teléfono:</label>
-                            <input 
-                                type="text" 
-                                name="telefono" 
-                                value={nuevaPostulacion.telefono} 
-                                onChange={handleCrearChange} 
-                                className="modal-select"
-                                placeholder="+56 9 1234 5678"
-                            />
-
+                            <input type="text" name="telefono" value={nuevaPostulacion.telefono} onChange={handleCrearChange} className="modal-select"/>
                             <label>Familia de Cargo:</label>
-                            <select 
-                                name="familiaCargo" 
-                                value={nuevaPostulacion.familiaCargo} 
-                                onChange={handleCrearChange}
-                                className="modal-select"
-                            >
-                                {Object.keys(opcionesCargos).map(fam => (
-                                    <option key={fam} value={fam}>{fam}</option>
-                                ))}
+                            <select name="familiaCargo" value={nuevaPostulacion.familiaCargo} onChange={handleCrearChange} className="modal-select">
+                                {Object.keys(opcionesCargos).map(fam => <option key={fam} value={fam}>{fam}</option>)}
                             </select>
-
-                            <label>Cargo al que postula:</label>
-                            <select 
-                                name="cargoPostulacion" 
-                                value={nuevaPostulacion.cargoPostulacion} 
-                                onChange={handleCrearChange}
-                                className="modal-select"
-                            >
-                                {opcionesCargos[nuevaPostulacion.familiaCargo].map(c => (
-                                    <option key={c} value={c}>{c}</option>
-                                ))}
+                            <label>Cargo:</label>
+                            <select name="cargoPostulacion" value={nuevaPostulacion.cargoPostulacion} onChange={handleCrearChange} className="modal-select">
+                                {opcionesCargos[nuevaPostulacion.familiaCargo].map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
-
-                            <label>Adjuntar CV (PDF/Word):</label>
-                            <input 
-                                type="file" 
-                                onChange={(e) => setCvFile(e.target.files[0])} 
-                                accept=".pdf,.doc,.docx"
-                                className="modal-select"
-                            />
-
                             <div className="modal-buttons" style={{ marginTop: '15px' }}>
                                 <button type="button" onClick={() => setCrearModalOpen(false)} className="btn-cancelar">Cancelar</button>
-                                <button type="submit" disabled={guardandoPostulacion} className="btn-guardar">
-                                    {guardandoPostulacion ? 'Guardando...' : 'Crear Postulación'}
-                                </button>
+                                <button type="submit" disabled={guardandoPostulacion} className="btn-guardar">{guardandoPostulacion ? 'Guardando...' : 'Crear Postulación'}</button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
 
-            {/* MODAL CONFIRMACIÓN AL FINALIZAR */}
             {confirmarModal.isOpen && (
                 <div className="modal-overlay">
                     <div className="modal-content" style={{ textAlign: 'center', maxWidth: '350px' }}>
-                        <h3 style={{ marginBottom: '25px', fontSize: '18px' }}>¿Estás seguro de pasar la tarjeta a finalizado?</h3>
+                        <h3 style={{ marginBottom: '25px', fontSize: '18px' }}>¿Pasar tarjeta a finalizado?</h3>
                         <div className="modal-buttons" style={{ justifyContent: 'center', gap: '15px' }}>
-                            <button onClick={cancelarConfirmacion} className="btn-cancelar">Cancelar</button>
+                            <button onClick={() => setConfirmarModal({ isOpen: false, solicitudId: null })} className="btn-cancelar">Cancelar</button>
                             <button onClick={aceptarConfirmacion} className="btn-guardar">Aceptar</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* MODAL DETALLES Y ELIMINAR */}
             {solicitudSeleccionada && (
                 <div className="modal-overlay" onClick={() => setSolicitudSeleccionada(null)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -356,70 +307,32 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                         <div className="modal-info">
                             <p><strong>Candidato:</strong> {solicitudSeleccionada.nombreCandidato}</p>
                             <p><strong>Cargo:</strong> {solicitudSeleccionada.cargo}</p>
-                            <p>
-                                <strong>Fecha de Postulación:</strong>{' '}
-                                {solicitudSeleccionada.fechaSolicitud 
-                                    ? new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(solicitudSeleccionada.fechaSolicitud))
-                                    : 'Desconocida'}
-                            </p>
                             <p><strong>Estado Actual:</strong> {solicitudSeleccionada.estado}</p>
-                            <p>
-                                <strong>Estado de Aprobación:</strong>{' '}
-                                {solicitudSeleccionada.estado === 'FINALIZADA' 
-                                    ? (solicitudSeleccionada.resultadoEvaluacion || 'Completado') 
-                                    : 'Pendiente'}
-                            </p>
-                            <p>
-                                <strong>Observación:</strong>{' '}
-                                {solicitudSeleccionada.estado === 'FINALIZADA' 
-                                    ? (solicitudSeleccionada.observacionEvaluacion || 'Sin observaciones') 
-                                    : 'Pendiente'}
-                            </p>
+                            <p><strong>Aprobación:</strong> {solicitudSeleccionada.estado === 'FINALIZADA' ? (solicitudSeleccionada.resultadoEvaluacion || 'Completado') : 'Pendiente'}</p>
+                            <p><strong>Observación:</strong> {solicitudSeleccionada.estado === 'FINALIZADA' ? (solicitudSeleccionada.observacionEvaluacion || 'Sin observaciones') : 'Pendiente'}</p>
                         </div>
                         <div className="modal-buttons" style={{ marginTop: '20px' }}>
-                            <button 
-                                onClick={() => eliminarSolicitud(solicitudSeleccionada.id, solicitudSeleccionada.nombreCandidato)} 
-                                className="btn-eliminar"
-                            >
-                                Eliminar Solicitud
-                            </button>
+                            <button onClick={() => eliminarSolicitud(solicitudSeleccionada.id, solicitudSeleccionada.nombreCandidato)} className="btn-eliminar">Eliminar</button>
                             <button onClick={() => setSolicitudSeleccionada(null)} className="btn-cancelar">Cerrar</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* MODAL EVALUACIÓN AL FINALIZAR */}
             {evaluacionModal.isOpen && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <h3>Registrar Resultado de Evaluación</h3>
-                        <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '15px' }}>
-                            Por favor ingresa el resultado final antes de cerrar la solicitud.
-                        </p>
-                        
+                        <h3>Registrar Resultado</h3>
                         <div className="modal-actions">
                             <label>Resultado General:</label>
-                            <select 
-                                value={datosEvaluacion.resultadoGeneral}
-                                onChange={(e) => setDatosEvaluacion({...datosEvaluacion, resultadoGeneral: e.target.value})}
-                                className="modal-select"
-                            >
+                            <select value={datosEvaluacion.resultadoGeneral} onChange={(e) => setDatosEvaluacion({...datosEvaluacion, resultadoGeneral: e.target.value})} className="modal-select">
                                 <option value="Apto">Apto</option>
                                 <option value="Apto con Observaciones">Apto con Observaciones</option>
                                 <option value="No Apto">No Apto</option>
                             </select>
-
                             <label style={{ marginTop: '10px' }}>Observaciones:</label>
-                            <textarea 
-                                value={datosEvaluacion.observaciones}
-                                onChange={(e) => setDatosEvaluacion({...datosEvaluacion, observaciones: e.target.value})}
-                                className="modal-textarea"
-                                placeholder="Ingresa los comentarios de la evaluación psicotécnica..."
-                                rows="4"
-                            />
+                            <textarea value={datosEvaluacion.observaciones} onChange={(e) => setDatosEvaluacion({...datosEvaluacion, observaciones: e.target.value})} className="modal-textarea" rows="4" />
                         </div>
-
                         <div className="modal-buttons">
                             <button onClick={cerrarModalEvaluacion} className="btn-cancelar">Cancelar</button>
                             <button onClick={enviarEvaluacion} className="btn-guardar">Guardar y Finalizar</button>

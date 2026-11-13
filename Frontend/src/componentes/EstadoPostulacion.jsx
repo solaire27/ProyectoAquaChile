@@ -5,7 +5,6 @@ import {
   FiSearch,
   FiMail,
   FiUser,
-  FiBriefcase,
   FiCalendar,
   FiCheck,
   FiClock,
@@ -40,11 +39,51 @@ const ETAPAS_PROCESO = [
   }
 ];
 
+const DATOS_PRUEBA_OFFLINE = [
+  {
+    id: 101,
+    nombreCandidato: 'María González',
+    correoCandidato: 'maria@correo.com',
+    cargo: 'Operario de Planta',
+    familiaCargo: 'Operativo',
+    fechaSolicitud: '2026-11-10T10:30:00',
+    estado: 'NUEVA_POSTULACION'
+  },
+  {
+    id: 102,
+    nombreCandidato: 'Juan Pérez',
+    correoCandidato: 'juan.perez@correo.com',
+    cargo: 'Analista Contable',
+    familiaCargo: 'Administrativo',
+    fechaSolicitud: '2026-11-08T15:20:00',
+    estado: 'PENDIENTE'
+  },
+  {
+    id: 103,
+    nombreCandidato: 'Camila Silva',
+    correoCandidato: 'camila.silva@correo.com',
+    cargo: 'Jefe de Turno',
+    familiaCargo: 'Jefatura',
+    fechaSolicitud: '2026-11-04T09:15:00',
+    estado: 'EN_PROCESO'
+  },
+  {
+    id: 104,
+    nombreCandidato: 'Carlos Ruiz',
+    correoCandidato: 'carlos.ruiz@correo.com',
+    cargo: 'Gerente de Operaciones',
+    familiaCargo: 'Gerencia',
+    fechaSolicitud: '2026-10-28T14:00:00',
+    estado: 'FINALIZADA'
+  }
+];
+
 const EstadoPostulacion = () => {
-  const [tipoBusqueda, setTipoBusqueda] = useState('correo'); // 'correo' | 'nombre'
+  const [tipoBusqueda, setTipoBusqueda] = useState('correo');
   const [valorBusqueda, setValorBusqueda] = useState('');
   const [resultados, setResultados] = useState([]);
   const [busquedaRealizada, setBusquedaRealizada] = useState(false);
+  const [modoOffline, setModoOffline] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -58,37 +97,64 @@ const EstadoPostulacion = () => {
     setErrorMsg('');
   };
 
-  const handleBuscar = async (e) => {
-    e.preventDefault();
-    setErrorMsg('');
+  const filtrarDatosOffline = (tipo, termino) => {
+    return DATOS_PRUEBA_OFFLINE.filter((item) =>
+      tipo === 'correo'
+        ? item.correoCandidato.toLowerCase() === termino.toLowerCase()
+        : item.nombreCandidato.toLowerCase().includes(termino.toLowerCase())
+    );
+  };
 
-    const termino = valorBusqueda.trim();
+  const ejecutarBusqueda = async (tipo, valor) => {
+    setErrorMsg('');
+    const termino = valor.trim();
+
     if (!termino) {
       setErrorMsg(
-        tipoBusqueda === 'correo'
+        tipo === 'correo'
           ? 'Por favor, ingresa el correo electrónico con el que postulaste.'
           : 'Por favor, ingresa tu nombre completo.'
       );
       return;
     }
 
-    if (tipoBusqueda === 'correo' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(termino)) {
+    if (tipo === 'correo' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(termino)) {
       setErrorMsg('Ingresa un formato de correo electrónico válido (ej: nombre@correo.com).');
       return;
     }
 
     setLoading(true);
     try {
-      const params = tipoBusqueda === 'correo' ? { correo: termino } : { nombre: termino };
-      const response = await api.get('/postulaciones/public/estado', { params });
-      setResultados(response.data || []);
+      const params = tipo === 'correo' ? { correo: termino } : { nombre: termino };
+      const response = await api.get('/postulaciones/public/estado', { params, timeout: 2500 });
+
+      // Si Vite devolvió HTML en vez de un arreglo JSON, forzamos el modo offline
+      if (!Array.isArray(response.data)) {
+        throw new Error('Respuesta no válida del backend');
+      }
+
+      setResultados(response.data);
+      setModoOffline(false);
       setBusquedaRealizada(true);
     } catch (error) {
-      setErrorMsg('No se pudo realizar la consulta en este momento. Inténtalo nuevamente.');
-      setResultados([]);
+      const filtrados = filtrarDatosOffline(tipo, termino);
+      setResultados(filtrados);
+      setModoOffline(true);
+      setBusquedaRealizada(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBuscar = (e) => {
+    e.preventDefault();
+    ejecutarBusqueda(tipoBusqueda, valorBusqueda);
+  };
+
+  const probarEjemplo = (correoEjemplo) => {
+    setTipoBusqueda('correo');
+    setValorBusqueda(correoEjemplo);
+    ejecutarBusqueda('correo', correoEjemplo);
   };
 
   const obtenerIndiceEtapa = (estadoActual) => {
@@ -106,6 +172,8 @@ const EstadoPostulacion = () => {
     });
   };
 
+  const listaSegura = Array.isArray(resultados) ? resultados : [];
+
   return (
     <div className="estado-page">
       <header className="estado-header">
@@ -119,7 +187,6 @@ const EstadoPostulacion = () => {
       </header>
 
       <main className="estado-container">
-        {/* TARJETA BUSCADOR */}
         <div className="estado-search-card">
           <div className="estado-title-block">
             <h1>Seguimiento de Postulación</h1>
@@ -171,6 +238,22 @@ const EstadoPostulacion = () => {
             </button>
           </form>
 
+          <div className="demo-chips-bar">
+            <span>Pruebas rápidas (sin BD):</span>
+            <button type="button" className="demo-chip" onClick={() => probarEjemplo('maria@correo.com')}>
+              Etapa 1: Recibida
+            </button>
+            <button type="button" className="demo-chip" onClick={() => probarEjemplo('juan.perez@correo.com')}>
+              Etapa 2: En Revisión
+            </button>
+            <button type="button" className="demo-chip" onClick={() => probarEjemplo('camila.silva@correo.com')}>
+              Etapa 3: En Evaluación
+            </button>
+            <button type="button" className="demo-chip" onClick={() => probarEjemplo('carlos.ruiz@correo.com')}>
+              Etapa 4: Finalizada
+            </button>
+          </div>
+
           {errorMsg && (
             <div className="estado-error-alert">
               <FiAlertCircle />
@@ -179,10 +262,15 @@ const EstadoPostulacion = () => {
           )}
         </div>
 
-        {/* RESULTADOS */}
         {busquedaRealizada && !loading && (
           <div className="estado-results-wrapper">
-            {resultados.length === 0 ? (
+            {modoOffline && listaSegura.length > 0 && (
+              <div className="offline-preview-banner">
+                Mostrando datos de vista previa (Backend desconectado).
+              </div>
+            )}
+
+            {listaSegura.length === 0 ? (
               <div className="estado-empty-card">
                 <div className="empty-icon-circle">
                   <FiFileText />
@@ -197,13 +285,13 @@ const EstadoPostulacion = () => {
                 </Link>
               </div>
             ) : (
-              resultados.map((postulacion) => {
-                const indiceActual = obtenerIndiceEtapa(postulacion.estado);
+              listaSegura.map((postulacion) => {
+                const estadoSeguro = postulacion.estado || 'NUEVA_POSTULACION';
+                const indiceActual = obtenerIndiceEtapa(estadoSeguro);
                 const infoEtapaActual = ETAPAS_PROCESO[indiceActual];
 
                 return (
                   <div key={postulacion.id} className="postulacion-result-card">
-                    {/* CABECERA DE LA POSTULACIÓN */}
                     <div className="result-card-top">
                       <div className="result-cargo-info">
                         <span className="result-familia-badge">{postulacion.familiaCargo}</span>
@@ -218,17 +306,17 @@ const EstadoPostulacion = () => {
                         </div>
                       </div>
 
-                      <div className={`status-pill status-${postulacion.estado.toLowerCase()}`}>
-                        {postulacion.estado === 'FINALIZADA' ? <FiCheckCircle /> : <FiClock />}
+                      <div className={`status-pill status-${estadoSeguro.toLowerCase()}`}>
+                        {estadoSeguro === 'FINALIZADA' ? <FiCheckCircle /> : <FiClock />}
                         <span>{infoEtapaActual.titulo}</span>
                       </div>
                     </div>
 
-                    {/* LÍNEA DE TIEMPO (STEPPER DE 4 ETAPAS) */}
                     <div className="stepper-container">
                       {ETAPAS_PROCESO.map((etapa, idx) => {
-                        const completado = idx < indiceActual || (idx === indiceActual && postulacion.estado === 'FINALIZADA');
-                        const activo = idx === indiceActual && postulacion.estado !== 'FINALIZADA';
+                        const completado =
+                          idx < indiceActual || (idx === indiceActual && estadoSeguro === 'FINALIZADA');
+                        const activo = idx === indiceActual && estadoSeguro !== 'FINALIZADA';
 
                         return (
                           <div
@@ -247,7 +335,6 @@ const EstadoPostulacion = () => {
                       })}
                     </div>
 
-                    {/* DETALLE DESCRIPTIVO DE LA ETAPA ACTUAL */}
                     <div className="stage-detail-box">
                       <FiInfo className="stage-detail-icon" />
                       <div>

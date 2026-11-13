@@ -79,7 +79,6 @@
   gap: 28px;
 }
 
-/* TARJETA DE BÚSQUEDA */
 .estado-search-card {
   background: #ffffff;
   border-radius: 20px;
@@ -209,6 +208,49 @@
   box-shadow: none;
 }
 
+/* BARRA DE PRUEBAS RÁPIDAS */
+.demo-chips-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed #e2e8f0;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.demo-chip {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.demo-chip:hover {
+  background: #e0f2fe;
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+.offline-preview-banner {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #e0f2fe;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+
 .estado-error-alert {
   display: flex;
   align-items: center;
@@ -223,7 +265,6 @@
   font-weight: 500;
 }
 
-/* RESULTADOS */
 .estado-results-wrapper {
   width: 100%;
   max-width: 820px;
@@ -282,7 +323,6 @@
   background: #0369a1;
 }
 
-/* TARJETA INDIVIDUAL DE POSTULACIÓN */
 .postulacion-result-card {
   background: #ffffff;
   border-radius: 20px;
@@ -333,7 +373,6 @@
   gap: 6px;
 }
 
-/* PÍLDORA DE ESTADO */
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -365,7 +404,6 @@
   color: #15803d;
 }
 
-/* STEPPER HORIZONTAL DE 4 ETAPAS */
 .stepper-container {
   display: flex;
   justify-content: space-between;
@@ -440,7 +478,6 @@
   color: #0f172a;
 }
 
-/* CAJA INFORMATIVA INFERIOR */
 .stage-detail-box {
   display: flex;
   align-items: flex-start;
@@ -484,7 +521,6 @@
   }
 }
 
-/* RESPONSIVE */
 @media (max-width: 768px) {
   .estado-header {
     padding: 20px;

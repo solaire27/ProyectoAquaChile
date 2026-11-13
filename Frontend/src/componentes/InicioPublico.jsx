@@ -60,10 +60,8 @@ const InicioPublico = () => {
 
       <main className="hero-section">
         <div className="hero-wrapper">
-          {/* TÍTULO PRINCIPAL EN GRANDE FUERA DE LA TARJETA */}
           <h1 className="hero-title">AquaChile</h1>
 
-          {/* TARJETA DE ACCIÓN PRINCIPAL */}
           <div className="hero-glass-card">
             <p className="hero-subtitle">
               Compromiso, innovación y excelencia en la acuicultura sostenible desde el sur de Chile hacia el mundo.
@@ -78,16 +76,12 @@ const InicioPublico = () => {
             </div>
           </div>
 
-          {/* BARRA INFERIOR: REVISA TU ESTADO */}
           <div className="status-check-bar">
             <span className="status-question">¿Ya postulaste con nosotros?</span>
-            <button 
-              className="btn-revisa-estado" 
-              onClick={() => alert('Próximamente: Portal de estado')}
-            >
+            <Link to="/estado" className="btn-revisa-estado" style={{ textDecoration: 'none' }}>
               <FiSearch className="btn-icon-search" />
               <span>Revisa tu Estado</span>
-            </button>
+            </Link>
           </div>
         </div>
       </main>

@@ -11,6 +11,11 @@ import java.util.Optional;
 @Repository
 public interface SolicitudRepository extends JpaRepository<SolicitudEvaluacion, Long> {
     List<SolicitudEvaluacion> findByEstado(EstadoSolicitud estado);
+
     Optional<SolicitudEvaluacion> findFirstByCandidatoNombreIgnoreCaseAndCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(
             String nombre, String correo);
+
+    List<SolicitudEvaluacion> findByCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(String correo);
+
+    List<SolicitudEvaluacion> findByCandidatoNombreContainingIgnoreCaseOrderByFechaSolicitudDesc(String nombre);
 }
