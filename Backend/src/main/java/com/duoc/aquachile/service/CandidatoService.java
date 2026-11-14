@@ -24,6 +24,11 @@ public class CandidatoService {
         candidato.setTelefono(dto.getTelefono());
         candidato.setCargoPostulacion(dto.getCargoPostulacion());
         candidato.setFamiliaCargo(dto.getFamiliaCargo());
+
+        // --- NUEVOS CAMPOS REQUERIDOS POR LA BASE DE DATOS ---
+        candidato.setRut(dto.getRut());
+        candidato.setFechaNacimiento(dto.getFechaNacimiento());
+
         candidato.setUrlCv(rutaCv);
 
         return candidatoRepository.save(candidato);
@@ -53,6 +58,16 @@ public class CandidatoService {
         candidato.setCargoPostulacion(dto.getCargoPostulacion());
         candidato.setFamiliaCargo(dto.getFamiliaCargo());
 
+        // Los nuevos campos
+        candidato.setRut(dto.getRut());
+        candidato.setFechaNacimiento(dto.getFechaNacimiento());
+
+        // Solo actualizamos el CV si enviaron uno nuevo
+        if (dto.getUrlCv() != null && !dto.getUrlCv().isEmpty()) {
+            candidato.setUrlCv(dto.getUrlCv());
+        }
+
         return candidatoRepository.save(candidato);
+
     }
 }

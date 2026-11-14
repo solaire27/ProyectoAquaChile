@@ -1,5 +1,6 @@
 package com.duoc.aquachile.service;
 
+import com.duoc.aquachile.dto.CandidatoRequestDTO;
 import com.duoc.aquachile.dto.SolicitudEstadoUpdateDTO;
 import com.duoc.aquachile.dto.SolicitudRequestDTO;
 import com.duoc.aquachile.exception.ResourceNotFoundException;
@@ -9,6 +10,9 @@ import com.duoc.aquachile.model.SolicitudEvaluacion;
 import com.duoc.aquachile.model.Usuario;
 import com.duoc.aquachile.repository.SolicitudRepository;
 import com.duoc.aquachile.repository.UsuarioRepository;
+import com.duoc.aquachile.service.integration.AiService;
+import jakarta.validation.Valid;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,9 +36,20 @@ public class SolicitudService {
         this.aiService = aiService;
     }
 
-    public SolicitudEvaluacion crearSolicitud(SolicitudRequestDTO dto) {
-        Candidato candidato = candidatoService.obtenerPorId(dto.getCandidatoId());
+    public SolicitudEvaluacion crearSolicitud(@Valid CandidatoRequestDTO dto) {
+        Candidato candidato = candidatoService.crearCandidato(dto, dto.getUrlCv());
+        SolicitudEvaluacion solicitud = new SolicitudEvaluacion();
+        solicitud.setCandidato(candidato);
+        solicitud.setCargo(dto.getCargoPostulacion());
+        solicitud.setFamiliaCargo(dto.getFamiliaCargo());
+        solicitud.setObservaciones("Postulación ingresada automáticamente desde el portal público");
+        solicitud.setEstado(EstadoSolicitud.NUEVA_POSTULACION);
 
+        return solicitudRepository.save(solicitud);
+    }
+
+    public SolicitudEvaluacion crearSolicitud(@Valid SolicitudRequestDTO dto) {
+        Candidato candidato = candidatoService.obtenerPorId(dto.getCandidatoId());
         SolicitudEvaluacion solicitud = new SolicitudEvaluacion();
         solicitud.setCandidato(candidato);
         solicitud.setCargo(dto.getCargo());
@@ -64,31 +79,47 @@ public class SolicitudService {
         SolicitudEvaluacion solicitud = obtenerPorId(id);
         solicitud.setEstado(dto.getEstado());
 
-        // --- 1. Lógica de Asignación Dinámica (Semana 2) ---
-        // Si el frontend envía un responsableId (Admin asignando o Psicólogo auto-asignándose),
-        // se busca en la BD y se asocia a la solicitud.
         if (dto.getResponsableId() != null) {
             Usuario responsable = usuarioRepository.findById(dto.getResponsableId())
                     .orElseThrow(() -> new ResourceNotFoundException("Usuario responsable no encontrado con ID: " + dto.getResponsableId()));
             solicitud.setResponsable(responsable);
         }
 
-        // --- 2. Integración de Agente de IA (Semana 3) ---
-        // Se dispara al pasar a etapa de evaluación (verifica si en tu Enum se llama EN_PROCESO o EN_EVALUACION)
-        // y solo si aún no tiene una recomendación generada para no gastar peticiones duplicadas.
+        // Guarda el estado INMEDIATAMENTE
+        solicitud = solicitudRepository.save(solicitud);
+
+        // Si el estado es EN_PROCESO, dispara el análisis de la IA en segundo plano
         if (dto.getEstado() == EstadoSolicitud.EN_PROCESO && solicitud.getRecomendacionIa() == null) {
             if (solicitud.getCandidato() != null && solicitud.getCandidato().getUrlCv() != null) {
-                String recomendacion = aiService.evaluarCvConIA(
-                        solicitud.getCandidato().getUrlCv(),
-                        solicitud.getCargo()
-                );
-                solicitud.setRecomendacionIa(recomendacion);
+                String urlCv = solicitud.getCandidato().getUrlCv();
+                String cargo = solicitud.getCargo();
+                // Esta llamada no bloquea el hilo principal
+                procesarEvaluacionEnSegundoPlano(solicitud.getId(), urlCv, cargo);
             } else {
                 solicitud.setRecomendacionIa("El candidato no adjuntó un archivo CV para analizar.");
+                solicitudRepository.save(solicitud);
             }
         }
 
-        return solicitudRepository.save(solicitud);
+        return solicitud;
+    }
+
+    // --- NUEVO MÉTODO: Ejecución Asíncrona de IA ---
+    @Async
+    public void procesarEvaluacionEnSegundoPlano(Long solicitudId, String urlCv, String cargo) {
+        try {
+            // Llama al servicio lento (Supabase + Gemini)
+            String recomendacion = aiService.evaluarCvConIA(urlCv, cargo);
+
+            // Refresca la entidad de la base de datos
+            SolicitudEvaluacion solicitud = obtenerPorId(solicitudId);
+            solicitud.setRecomendacionIa(recomendacion);
+
+            // Guarda el resultado final
+            solicitudRepository.save(solicitud);
+        } catch (Exception e) {
+            System.err.println("Error procesando IA en segundo plano para la solicitud " + solicitudId + ": " + e.getMessage());
+        }
     }
 
     public SolicitudEvaluacion crearSolicitudAutomatica(Long candidatoId, String cargo, String familiaCargo) {
@@ -101,8 +132,6 @@ public class SolicitudService {
         solicitud.setObservaciones("Postulación generada automáticamente desde portal público");
         solicitud.setEstado(EstadoSolicitud.NUEVA_POSTULACION);
 
-        // Responsable_ID queda NULL por defecto según el diseño de la base de datos
-
         return solicitudRepository.save(solicitud);
     }
 
@@ -110,6 +139,7 @@ public class SolicitudService {
         SolicitudEvaluacion solicitud = obtenerPorId(id);
         solicitudRepository.delete(solicitud);
     }
+
     public String consultarEstadoPublico( String identificador, String correo) {
         SolicitudEvaluacion solicitud = solicitudRepository
                 .findFirstByCandidatoNombreIgnoreCaseAndCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(identificador, correo)
