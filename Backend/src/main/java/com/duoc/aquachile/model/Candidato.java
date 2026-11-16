@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -36,4 +38,10 @@ public class Candidato {
 
     @Column(name = "url_cv", length = 255)
     private String urlCv;
+
+    @Column(nullable = false, unique = true, length = 12)
+    private String rut;
+
+    @Column(name = "fecha_nacimiento", nullable = false)
+    private LocalDate fechaNacimiento;
 }

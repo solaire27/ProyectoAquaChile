@@ -1,13 +1,10 @@
 package com.duoc.aquachile.controller;
 
 import com.duoc.aquachile.dto.CandidatoRequestDTO;
-import com.duoc.aquachile.model.EstadoSolicitud;
 import com.duoc.aquachile.model.SolicitudEvaluacion;
-import com.duoc.aquachile.repository.SolicitudRepository;
-import com.duoc.aquachile.service.CandidatoService;
-import com.duoc.aquachile.service.FileStorageService;
 import com.duoc.aquachile.service.SolicitudService;
-import lombok.RequiredArgsConstructor;
+import com.duoc.aquachile.service.integration.SupabaseStorageService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,47 +15,29 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/postulaciones/public")
-@RequiredArgsConstructor
 public class PostulacionPublicaController {
 
-    private final CandidatoService candidatoService;
     private final SolicitudService solicitudService;
-    private final FileStorageService fileStorageService;
-    private final SolicitudRepository solicitudRepository;
+    private final SupabaseStorageService supabaseStorageService;
 
-    public record EstadoPostulacionResponse(
-            Long id,
-            String nombreCandidato,
-            String correoCandidato,
-            String cargo,
-            String familiaCargo,
-            LocalDateTime fechaSolicitud,
-            EstadoSolicitud estado
-    ) {}
+    public PostulacionPublicaController(SolicitudService solicitudService, SupabaseStorageService supabaseStorageService) {
+        this.solicitudService = solicitudService;
+        this.supabaseStorageService = supabaseStorageService;
+    }
 
     @PostMapping(consumes = {"multipart/form-data"})
-    public ResponseEntity<String> recibirPostulacion(
-            @RequestPart("candidato") CandidatoRequestDTO candidatoDto,
+    public ResponseEntity<SolicitudEvaluacion> recibirPostulacion(
+            @RequestPart("candidato") @Valid CandidatoRequestDTO dto,
             @RequestPart(value = "cv", required = false) MultipartFile cv) {
 
-        try {
-            String rutaCv = null;
-            if (cv != null && !cv.isEmpty()) {
-                rutaCv = fileStorageService.guardarArchivo(cv);
-            }
-
-            var candidato = candidatoService.crearCandidato(candidatoDto, rutaCv);
-            solicitudService.crearSolicitudAutomatica(
-                    candidato.getId(),
-                    candidatoDto.getCargoPostulacion(),
-                    candidatoDto.getFamiliaCargo()
-            );
-
-            return new ResponseEntity<>("Postulación recibida exitosamente", HttpStatus.CREATED);
-
-        } catch (Exception e) {
-            return new ResponseEntity<>("Error al procesar la postulación: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        // Si el candidato adjuntó un CV, lo subimos a Supabase
+        if (cv != null && !cv.isEmpty()) {
+            String nombreArchivoEnSupabase = supabaseStorageService.subirCv(cv);
+            dto.setUrlCv(nombreArchivoEnSupabase); // Asignamos el nombre al DTO antes de guardarlo
         }
+
+        SolicitudEvaluacion nuevaSolicitud = solicitudService.crearSolicitud(dto);
+        return new ResponseEntity<>(nuevaSolicitud, HttpStatus.CREATED);
     }
 
     @GetMapping("/estado")
