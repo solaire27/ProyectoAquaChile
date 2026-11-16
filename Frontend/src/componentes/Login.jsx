@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../services/api';
 import './Login.css';
 
 export default function Login({ alAutenticar }) {
@@ -9,6 +10,7 @@ export default function Login({ alAutenticar }) {
   });
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
+  const navigate = useNavigate();
 
   const manejarCambio = (e) => {
     setCredenciales({
@@ -23,22 +25,23 @@ export default function Login({ alAutenticar }) {
     setCargando(true);
 
     try {
-      // Simulación de respuesta REST JWT de Spring Boot
-      if (credenciales.correo && credenciales.password) {
-        // En producción: await fetch('http://localhost:8080/api/auth/login', ...)
-        const usuarioSimulado = {
-          nombre: "María Victoria Bustamante",
-          correo: credenciales.correo,
-          rol: "EVALUADOR",
-          token: "fake-jwt-token-xyz-123"
-        };
-        
-        localStorage.setItem('token', usuarioSimulado.token);
-        alAutenticar(usuarioSimulado);
-      } else {
-        setError('Por favor completa todos los campos.');
-      }
+      // Conexión real con el endpoint POST /api/auth/login de tu Spring Boot
+      const response = await api.post('/auth/login', {
+        correo: credenciales.correo,
+        password: credenciales.password
+      });
+
+      const { token, id, nombre, correo, rol } = response.data;
+
+      // Guardamos la sesión y los datos del usuario en localStorage
+      localStorage.setItem('token', token);
+      const usuarioData = { id, nombre, correo, rol };
+      localStorage.setItem('usuario', JSON.stringify(usuarioData));
+
+      alAutenticar(usuarioData);
+      navigate('/dashboard');
     } catch (err) {
+      console.error(err);
       setError('Credenciales inválidas o servidor no disponible.');
     } finally {
       setCargando(false);

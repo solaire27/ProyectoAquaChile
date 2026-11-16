@@ -1,8 +1,24 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: '/api', 
-    timeout: 2500 // Falla rápido si no hay backend para activar los datos simulados
+    baseURL: 'http://localhost:8080/api',
+    headers: {
+        'Content-Type': 'application/json'
+    }
 });
+
+// Interceptor para inyectar el token JWT en cada petición protegida
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
 
 export default api;

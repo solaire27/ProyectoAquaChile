@@ -10,9 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/postulaciones/public")
 public class PostulacionPublicaController {
@@ -38,35 +35,5 @@ public class PostulacionPublicaController {
 
         SolicitudEvaluacion nuevaSolicitud = solicitudService.crearSolicitud(dto);
         return new ResponseEntity<>(nuevaSolicitud, HttpStatus.CREATED);
-    }
-
-    @GetMapping("/estado")
-    public ResponseEntity<?> consultarEstadoPostulacion(
-            @RequestParam(required = false) String correo,
-            @RequestParam(required = false) String nombre) {
-
-        List<SolicitudEvaluacion> resultados;
-
-        if (correo != null && !correo.trim().isEmpty()) {
-            resultados = solicitudRepository.findByCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(correo.trim());
-        } else if (nombre != null && !nombre.trim().isEmpty()) {
-            resultados = solicitudRepository.findByCandidatoNombreContainingIgnoreCaseOrderByFechaSolicitudDesc(nombre.trim());
-        } else {
-            return ResponseEntity.badRequest().body("Debes ingresar un correo electrónico o nombre para realizar la búsqueda.");
-        }
-
-        List<EstadoPostulacionResponse> respuesta = resultados.stream()
-                .map(s -> new EstadoPostulacionResponse(
-                        s.getId(),
-                        s.getCandidato().getNombre(),
-                        s.getCandidato().getCorreo(),
-                        s.getCargo(),
-                        s.getFamiliaCargo(),
-                        s.getFechaSolicitud(),
-                        s.getEstado()
-                ))
-                .toList();
-
-        return ResponseEntity.ok(respuesta);
     }
 }
