@@ -12,6 +12,7 @@ public class SolicitudResponseDTO {
     // Datos del candidato asociado
     private Long candidatoId;
     private String nombreCandidato;
+    private String urlCv;
 
     // Datos del responsable (puede ser null)
     private Long responsableId;
@@ -27,6 +28,6 @@ public class SolicitudResponseDTO {
     private String resultadoEvaluacion;
     private String observacionEvaluacion;
 
-    // --- NUEVO: Recomendación del Agente IA ---
+    // --- Recomendación del Agente IA ---
     private String recomendacionIa;
 }

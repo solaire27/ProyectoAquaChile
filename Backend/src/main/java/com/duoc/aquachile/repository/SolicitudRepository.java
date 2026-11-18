@@ -15,6 +15,9 @@ public interface SolicitudRepository extends JpaRepository<SolicitudEvaluacion, 
     Optional<SolicitudEvaluacion> findFirstByCandidatoNombreIgnoreCaseAndCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(
             String nombre, String correo);
 
+    Optional<SolicitudEvaluacion> findFirstByCandidatoRutIgnoreCaseAndCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(
+            String rut, String correo);
+
     List<SolicitudEvaluacion> findByCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(String correo);
 
     List<SolicitudEvaluacion> findByCandidatoNombreContainingIgnoreCaseOrderByFechaSolicitudDesc(String nombre);

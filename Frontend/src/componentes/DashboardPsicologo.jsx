@@ -6,9 +6,10 @@ import {
     FiCpu, FiTrash2, FiX, FiAlignLeft,
     FiUserCheck, FiFileText, FiUploadCloud,
     FiUser, FiMail, FiPhone, FiCreditCard, FiBriefcase,
-    FiCalendar, FiRefreshCw, FiUsers, FiUserPlus
+    FiCalendar, FiRefreshCw, FiUsers, FiUserPlus, FiExternalLink
 } from 'react-icons/fi';
 import api from '../services/api';
+import { analizarEstadoIa } from '../utils/iaHelper';
 import MetricasPsicologo from './MetricasPsicologo';
 import TableroKanban from './TableroKanban';
 import GestionOfertas from './GestionOfertas';
@@ -48,6 +49,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [loading, setLoading] = useState(true);
     const [refrescando, setRefrescando] = useState(false);
     const [analizandoIaId, setAnalizandoIaId] = useState(null);
+    const [cargandoCv, setCargandoCv] = useState(false);
 
     // Vistas: 'overview' | 'board' | 'candidatos' | 'ofertas' | 'usuarios'
     const [vistaActiva, setVistaActiva] = useState('overview');
@@ -124,6 +126,44 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
 
         return () => clearInterval(intervalo);
     }, [solicitudes]);
+
+    const abrirCvPdf = async (solicitudId) => {
+        setCargandoCv(true);
+        try {
+            const response = await api.get(`/solicitudes/${solicitudId}/cv`, {
+                responseType: 'blob'
+            });
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank', 'noopener,noreferrer');
+            setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+        } catch (error) {
+            console.error('Error al abrir CV:', error);
+            alert('No se pudo abrir el CV. Verifica que el archivo exista en Supabase.');
+        } finally {
+            setCargandoCv(false);
+        }
+    };
+
+    const reintentarIa = async (solicitudId) => {
+        setAnalizandoIaId(solicitudId);
+        try {
+            const { data } = await api.post(`/solicitudes/${solicitudId}/reintentar-ia`);
+            if (data && data.id) {
+                setSolicitudes(prev =>
+                    prev.map(s => (s.id === data.id ? data : s))
+                );
+                setSolicitudSeleccionada(prev =>
+                    prev && prev.id === data.id ? data : prev
+                );
+            }
+        } catch (error) {
+            console.error('Error al reintentar análisis de IA:', error);
+            alert('No se pudo reintentar el análisis de IA.');
+        } finally {
+            setAnalizandoIaId(null);
+        }
+    };
 
     const handleDropTarjeta = (id, estadoActual, nuevoEstado) => {
         if (!id || estadoActual === nuevoEstado) return;
@@ -328,6 +368,10 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         const coincideFamilia = filtroFamilia === 'TODAS' || sol.familiaCargo === filtroFamilia;
         return coincideTexto && coincideFamilia;
     });
+
+    const infoIaModal = solicitudSeleccionada
+        ? analizarEstadoIa(solicitudSeleccionada.recomendacionIa)
+        : null;
 
     return (
         <div className="trello-workspace">
@@ -620,6 +664,11 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                 <div className="modal-title-row">
                                     <h2>{solicitudSeleccionada.nombreCandidato}</h2>
                                     <span className="modal-id-tag">#SOL-{solicitudSeleccionada.id}</span>
+                                    {infoIaModal?.puntaje !== null && (
+                                        <span className="trello-badge ia-score-badge">
+                                            IA: {infoIaModal.puntaje}/10
+                                        </span>
+                                    )}
                                 </div>
                                 <p className="modal-subtitle-list">
                                     Postulando a <strong>{solicitudSeleccionada.cargo}</strong> en la lista{' '}
@@ -668,6 +717,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                             <FiCpu className="icon-cyan" />
                                             <h4>Evaluación de CV con IA (Gemini)</h4>
                                         </div>
+
                                         {solicitudSeleccionada.estado === 'EN_PROCESO' && !solicitudSeleccionada.recomendacionIa && (
                                             <button
                                                 className="btn-mini-refresh"
@@ -676,7 +726,20 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                                 <FiRefreshCw /> Comprobar resultado
                                             </button>
                                         )}
+
+                                        {(solicitudSeleccionada.estado === 'EN_PROCESO' || solicitudSeleccionada.estado === 'FINALIZADA') &&
+                                            infoIaModal?.estado === 'error' && (
+                                                <button
+                                                    className="btn-mini-refresh"
+                                                    onClick={() => reintentarIa(solicitudSeleccionada.id)}
+                                                    disabled={analizandoIaId === solicitudSeleccionada.id}
+                                                >
+                                                    <FiRefreshCw className={analizandoIaId === solicitudSeleccionada.id ? 'spin-refresh' : ''} />
+                                                    Reintentar análisis
+                                                </button>
+                                            )}
                                     </div>
+
                                     {solicitudSeleccionada.estado === 'EN_PROCESO' || solicitudSeleccionada.estado === 'FINALIZADA' ? (
                                         <p className="ia-content-box">
                                             {solicitudSeleccionada.recomendacionIa ||
@@ -740,6 +803,21 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                 ))}
 
                                 <h5 style={{ marginTop: '20px' }}>Acciones</h5>
+
+                                {solicitudSeleccionada.urlCv ? (
+                                    <button
+                                        className="sidebar-action-btn"
+                                        onClick={() => abrirCvPdf(solicitudSeleccionada.id)}
+                                        disabled={cargandoCv}
+                                    >
+                                        <FiExternalLink /> {cargandoCv ? 'Abriendo CV...' : 'Ver CV (PDF)'}
+                                    </button>
+                                ) : (
+                                    <button className="sidebar-action-btn current-stage" disabled>
+                                        <FiFileText /> Sin CV adjunto
+                                    </button>
+                                )}
+
                                 <button
                                     className="sidebar-action-btn primary-eval-btn"
                                     onClick={() => {

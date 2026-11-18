@@ -26,32 +26,48 @@ public class SupabaseStorageService {
 
     public String subirCv(MultipartFile archivo) {
         try {
-            // 1. Limpiar tildes, ñ, espacios y caracteres inválidos para Supabase Storage
             String nombreOriginal = archivo.getOriginalFilename() != null ? archivo.getOriginalFilename() : "cv.pdf";
             String nombreLimpio = Normalizer.normalize(nombreOriginal, Normalizer.Form.NFD)
                     .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
                     .replaceAll("[^a-zA-Z0-9._-]", "_");
 
-            // 2. Generar nombre único para no sobreescribir CVs si se llaman igual
             String nombreUnico = UUID.randomUUID().toString() + "-" + nombreLimpio;
             String endpoint = supabaseUrl + "/storage/v1/object/cv_candidatos/" + nombreUnico;
 
-            // 3. Configurar cabeceras (Usando Service Role para bypass de seguridad)
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(serviceRoleKey);
             headers.setContentType(MediaType.valueOf(archivo.getContentType() != null ? archivo.getContentType() : "application/pdf"));
 
-            // 4. Subir los bytes a Supabase
             HttpEntity<byte[]> requestEntity = new HttpEntity<>(archivo.getBytes(), headers);
             ResponseEntity<String> response = restTemplate.exchange(endpoint, HttpMethod.POST, requestEntity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                return nombreUnico; // Retornamos solo el nombre generado
+                return nombreUnico;
             } else {
                 throw new RuntimeException("Error al subir archivo a Supabase: " + response.getStatusCode());
             }
         } catch (Exception e) {
             throw new RuntimeException("Excepción al subir el CV a Supabase: " + e.getMessage());
+        }
+    }
+
+    public byte[] descargarCv(String nombreArchivo) {
+        try {
+            String endpoint = supabaseUrl + "/storage/v1/object/cv_candidatos/" + nombreArchivo;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(serviceRoleKey);
+
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+            ResponseEntity<byte[]> response = restTemplate.exchange(endpoint, HttpMethod.GET, requestEntity, byte[].class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            } else {
+                throw new RuntimeException("No se pudo descargar el CV desde Supabase: " + response.getStatusCode());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al descargar el CV desde Supabase: " + e.getMessage());
         }
     }
 }

@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class SolicitudService {
@@ -85,37 +86,45 @@ public class SolicitudService {
             solicitud.setResponsable(responsable);
         }
 
-        // Guarda el estado INMEDIATAMENTE
         solicitud = solicitudRepository.save(solicitud);
 
-        // Si el estado es EN_PROCESO, dispara el análisis de la IA en segundo plano
-        if (dto.getEstado() == EstadoSolicitud.EN_PROCESO && solicitud.getRecomendacionIa() == null) {
-            if (solicitud.getCandidato() != null && solicitud.getCandidato().getUrlCv() != null) {
-                String urlCv = solicitud.getCandidato().getUrlCv();
-                String cargo = solicitud.getCargo();
-                // Esta llamada no bloquea el hilo principal
-                procesarEvaluacionEnSegundoPlano(solicitud.getId(), urlCv, cargo);
-            } else {
-                solicitud.setRecomendacionIa("El candidato no adjuntó un archivo CV para analizar.");
-                solicitudRepository.save(solicitud);
-            }
+        boolean sinAnalisisValido = solicitud.getRecomendacionIa() == null
+                || solicitud.getRecomendacionIa().startsWith("Error")
+                || solicitud.getRecomendacionIa().contains("No se recibió respuesta válida");
+
+        if (dto.getEstado() == EstadoSolicitud.EN_PROCESO && sinAnalisisValido) {
+            dispararAnalisisSiCorresponde(solicitud);
         }
 
         return solicitud;
     }
 
-    // --- NUEVO MÉTODO: Ejecución Asíncrona de IA ---
+    public SolicitudEvaluacion reintentarAnalisisIa(Long id) {
+        SolicitudEvaluacion solicitud = obtenerPorId(id);
+        solicitud.setRecomendacionIa(null);
+        solicitud = solicitudRepository.save(solicitud);
+        dispararAnalisisSiCorresponde(solicitud);
+        return solicitud;
+    }
+
+    private void dispararAnalisisSiCorresponde(SolicitudEvaluacion solicitud) {
+        if (solicitud.getCandidato() != null && solicitud.getCandidato().getUrlCv() != null && !solicitud.getCandidato().getUrlCv().isBlank()) {
+            Long solicitudId = solicitud.getId();
+            String urlCv = solicitud.getCandidato().getUrlCv();
+            String cargo = solicitud.getCargo();
+            CompletableFuture.runAsync(() -> procesarEvaluacionEnSegundoPlano(solicitudId, urlCv, cargo));
+        } else {
+            solicitud.setRecomendacionIa("El candidato no adjuntó un archivo CV para analizar.");
+            solicitudRepository.save(solicitud);
+        }
+    }
+
     @Async
     public void procesarEvaluacionEnSegundoPlano(Long solicitudId, String urlCv, String cargo) {
         try {
-            // Llama al servicio lento (Supabase + Gemini)
             String recomendacion = aiService.evaluarCvConIA(urlCv, cargo);
-
-            // Refresca la entidad de la base de datos
             SolicitudEvaluacion solicitud = obtenerPorId(solicitudId);
             solicitud.setRecomendacionIa(recomendacion);
-
-            // Guarda el resultado final
             solicitudRepository.save(solicitud);
         } catch (Exception e) {
             System.err.println("Error procesando IA en segundo plano para la solicitud " + solicitudId + ": " + e.getMessage());
@@ -140,7 +149,18 @@ public class SolicitudService {
         solicitudRepository.delete(solicitud);
     }
 
-    public String consultarEstadoPublico( String identificador, String correo) {
+    public SolicitudEvaluacion consultarSolicitudPublica(String identificador, String correo) {
+        String idLimpio = identificador.trim();
+        String correoLimpio = correo.trim();
+
+        return solicitudRepository
+                .findFirstByCandidatoRutIgnoreCaseAndCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(idLimpio, correoLimpio)
+                .or(() -> solicitudRepository
+                        .findFirstByCandidatoNombreIgnoreCaseAndCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(idLimpio, correoLimpio))
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontraron postulaciones asociadas a los datos ingresados"));
+    }
+
+    public String consultarEstadoPublico(String identificador, String correo) {
         SolicitudEvaluacion solicitud = solicitudRepository
                 .findFirstByCandidatoNombreIgnoreCaseAndCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(identificador, correo)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontraron postulaciones asociadas a los datos ingresados"));

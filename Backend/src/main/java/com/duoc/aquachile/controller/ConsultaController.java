@@ -1,6 +1,7 @@
 package com.duoc.aquachile.controller;
 
 import com.duoc.aquachile.dto.ConsultaEstadoRequestDTO;
+import com.duoc.aquachile.model.SolicitudEvaluacion;
 import com.duoc.aquachile.service.SolicitudService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +23,15 @@ public class ConsultaController {
     // Endpoint público: POST /api/solicitudes/estado
     @PostMapping("/estado")
     public ResponseEntity<Object> consultarEstado(@Valid @RequestBody ConsultaEstadoRequestDTO dto) {
-        String estadoActual = solicitudService.consultarEstadoPublico(dto.getIdentificador(), dto.getCorreo());
+        SolicitudEvaluacion solicitud = solicitudService.consultarSolicitudPublica(dto.getIdentificador(), dto.getCorreo());
 
-        Map<String, String> respuesta = new HashMap<>();
-        respuesta.put("estado", estadoActual);
+        Map<String, Object> respuesta = new HashMap<>();
+        respuesta.put("id", solicitud.getId());
+        respuesta.put("nombreCandidato", solicitud.getCandidato().getNombre());
+        respuesta.put("cargo", solicitud.getCargo());
+        respuesta.put("familiaCargo", solicitud.getFamiliaCargo());
+        respuesta.put("fechaSolicitud", solicitud.getFechaSolicitud());
+        respuesta.put("estado", solicitud.getEstado().name());
 
         return ResponseEntity.ok(respuesta);
     }
