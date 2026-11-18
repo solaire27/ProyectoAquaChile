@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     FiSearch, FiPlus, FiClock, FiCpu, FiAlignLeft,
-    FiFilter, FiX, FiLayers, FiAlertTriangle
+    FiFilter, FiX, FiLayers, FiAlertTriangle, FiInbox
 } from 'react-icons/fi';
 import { analizarEstadoIa } from '../utils/iaHelper';
 
@@ -111,7 +111,7 @@ const TableroKanban = ({
                         return (
                             <button
                                 key={familia}
-                                className={`area-filter-pill ${isSelected ? 'active' : ''}`}
+                                className={`area-filter-pill ${isSelected ? 'active' : ''} ${count === 0 && !isSelected ? 'pill-empty' : ''}`}
                                 style={
                                     isSelected
                                         ? { backgroundColor: famColor.bg, color: '#ffffff', borderColor: famColor.bg }
@@ -243,7 +243,8 @@ const TableroKanban = ({
 
                                 {tarjetas.length === 0 && (
                                     <div className="trello-empty-slot">
-                                        Sin candidatos en esta etapa. Arrastra una tarjeta aquí.
+                                        <FiInbox className="empty-slot-icon" />
+                                        <span>Sin candidatos en esta etapa. Arrastra una tarjeta aquí.</span>
                                     </div>
                                 )}
                             </div>

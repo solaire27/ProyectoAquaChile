@@ -6,7 +6,8 @@ import {
     FiCpu, FiTrash2, FiX, FiAlignLeft,
     FiUserCheck, FiFileText, FiUploadCloud,
     FiUser, FiMail, FiPhone, FiCreditCard, FiBriefcase,
-    FiCalendar, FiRefreshCw, FiUsers, FiUserPlus, FiExternalLink
+    FiCalendar, FiRefreshCw, FiUsers, FiUserPlus,
+    FiExternalLink, FiPrinter, FiInfo
 } from 'react-icons/fi';
 import api from '../services/api';
 import { analizarEstadoIa } from '../utils/iaHelper';
@@ -44,20 +45,30 @@ const obtenerIniciales = (nombre) => {
     return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
 };
 
+const escaparHtml = (texto) => {
+    if (!texto) return '';
+    return String(texto)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+};
+
 const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [solicitudes, setSolicitudes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refrescando, setRefrescando] = useState(false);
     const [analizandoIaId, setAnalizandoIaId] = useState(null);
     const [cargandoCv, setCargandoCv] = useState(false);
+    const [toasts, setToasts] = useState([]);
 
-    // Vistas: 'overview' | 'board' | 'candidatos' | 'ofertas' | 'usuarios'
     const [vistaActiva, setVistaActiva] = useState('overview');
     const [busqueda, setBusqueda] = useState('');
     const [filtroFamilia, setFiltroFamilia] = useState('TODAS');
 
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     const [confirmarModal, setConfirmarModal] = useState({ isOpen: false, solicitudId: null });
+    const [eliminarModal, setEliminarModal] = useState({ isOpen: false, id: null, nombre: '' });
     const [evaluacionModal, setEvaluacionModal] = useState({ isOpen: false, solicitudId: null });
     const [datosEvaluacion, setDatosEvaluacion] = useState({ resultadoGeneral: 'Apto', observaciones: '' });
 
@@ -84,6 +95,18 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         { key: 'FINALIZADA', titulo: 'Finalizadas', color: '#10b981' }
     ];
 
+    const mostrarToast = (texto, tipo = 'info') => {
+        const id = Date.now() + Math.random();
+        setToasts(prev => [...prev, { id, texto, tipo }]);
+        setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== id));
+        }, 4200);
+    };
+
+    const cerrarToast = (id) => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+    };
+
     const fetchSolicitudes = async (silencioso = false) => {
         if (!silencioso) setLoading(true);
         else setRefrescando(true);
@@ -100,8 +123,10 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         } catch (error) {
             console.error('Error al cargar solicitudes:', error);
             if (error.response?.status === 401 || error.response?.status === 403) {
-                alert('Tu sesión expiró o no tienes permisos. Por favor vuelve a iniciar sesión.');
-                alCerrarSesion();
+                mostrarToast('Tu sesión expiró. Redirigiendo al inicio de sesión...', 'error');
+                setTimeout(() => alCerrarSesion(), 1200);
+            } else {
+                mostrarToast('No se pudieron actualizar las solicitudes.', 'error');
             }
         } finally {
             setLoading(false);
@@ -139,7 +164,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             setTimeout(() => window.URL.revokeObjectURL(url), 60000);
         } catch (error) {
             console.error('Error al abrir CV:', error);
-            alert('No se pudo abrir el CV. Verifica que el archivo exista en Supabase.');
+            mostrarToast('No se pudo abrir el CV. Verifica que el archivo exista en Supabase.', 'error');
         } finally {
             setCargandoCv(false);
         }
@@ -157,12 +182,115 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                     prev && prev.id === data.id ? data : prev
                 );
             }
+            mostrarToast('Análisis de IA relanzado en segundo plano.', 'info');
         } catch (error) {
             console.error('Error al reintentar análisis de IA:', error);
-            alert('No se pudo reintentar el análisis de IA.');
+            mostrarToast('No se pudo reintentar el análisis de IA.', 'error');
         } finally {
             setAnalizandoIaId(null);
         }
+    };
+
+    const imprimirFicha = (sol) => {
+        const ventana = window.open('', '_blank', 'width=850,height=900');
+        if (!ventana) {
+            mostrarToast('Permite las ventanas emergentes para exportar el informe a PDF.', 'error');
+            return;
+        }
+
+        const etapa = columnas.find(c => c.key === sol.estado)?.titulo || sol.estado;
+        const fechaSol = sol.fechaSolicitud
+            ? new Date(sol.fechaSolicitud).toLocaleDateString('es-CL')
+            : 'Reciente';
+        const fechaHoy = new Date().toLocaleDateString('es-CL', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+
+        ventana.document.write(`
+            <!doctype html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8" />
+                <title>Ficha Psicolaboral - ${escaparHtml(sol.nombreCandidato)}</title>
+                <style>
+                    body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; margin: 40px; line-height: 1.55; }
+                    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0284c7; padding-bottom: 16px; margin-bottom: 24px; }
+                    .brand { font-size: 22px; font-weight: 800; color: #0284c7; }
+                    .meta-doc { text-align: right; font-size: 12px; color: #475569; }
+                    h1 { font-size: 20px; margin: 0 0 4px 0; }
+                    .subtitle { color: #475569; font-size: 14px; margin: 0 0 22px 0; }
+                    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 22px; }
+                    .field-label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; }
+                    .field-val { font-size: 14px; font-weight: 600; color: #0f172a; }
+                    .section { margin-bottom: 22px; }
+                    .section h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.4px; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; }
+                    .box { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; font-size: 13.5px; white-space: pre-wrap; }
+                    .verdict { background: #f0fdf4; border: 1px solid #86efac; }
+                    .footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; display: flex; justify-content: space-between; }
+                    @media print { body { margin: 20px; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="brand">AquaChile — Selección y Evaluación Psicolaboral</div>
+                    <div class="meta-doc">
+                        <div>Solicitud #SOL-${escaparHtml(sol.id)}</div>
+                        <div>Emitido el ${escaparHtml(fechaHoy)}</div>
+                    </div>
+                </div>
+
+                <h1>${escaparHtml(sol.nombreCandidato)}</h1>
+                <p class="subtitle">Postulación al cargo de <strong>${escaparHtml(sol.cargo)}</strong> (${escaparHtml(sol.familiaCargo || 'General')})</p>
+
+                <div class="grid">
+                    <div>
+                        <div class="field-label">Etapa Actual</div>
+                        <div class="field-val">${escaparHtml(etapa)}</div>
+                    </div>
+                    <div>
+                        <div class="field-label">Fecha de Postulación</div>
+                        <div class="field-val">${escaparHtml(fechaSol)}</div>
+                    </div>
+                    <div>
+                        <div class="field-label">Evaluador Responsable</div>
+                        <div class="field-val">${escaparHtml(sol.nombreResponsable || 'Sin asignar')}</div>
+                    </div>
+                    <div>
+                        <div class="field-label">Resultado Final</div>
+                        <div class="field-val">${escaparHtml(sol.resultadoEvaluacion || 'Pendiente de evaluación')}</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Antecedentes y Notas de Postulación</h2>
+                    <div class="box">${escaparHtml(sol.observaciones || 'Sin observaciones registradas.')}</div>
+                </div>
+
+                <div class="section">
+                    <h2>Análisis Automático de CV (Gemini IA)</h2>
+                    <div class="box">${escaparHtml(sol.recomendacionIa || 'Sin análisis de IA registrado.')}</div>
+                </div>
+
+                <div class="section">
+                    <h2>Dictamen Psicolaboral</h2>
+                    <div class="box verdict">
+                        <strong>Dictamen: ${escaparHtml(sol.resultadoEvaluacion || 'Pendiente')}</strong><br/><br/>
+                        ${escaparHtml(sol.observacionEvaluacion || 'Aún no se han registrado conclusiones finales.')}
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <span>Documento confidencial de uso interno — AquaChile S.A.</span>
+                    <span>Generado por ${escaparHtml(usuario?.nombre || 'Portal Psicólogos')}</span>
+                </div>
+            </body>
+            </html>
+        `);
+        ventana.document.close();
+        ventana.focus();
+        setTimeout(() => ventana.print(), 300);
     };
 
     const handleDropTarjeta = (id, estadoActual, nuevoEstado) => {
@@ -214,9 +342,20 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             } else {
                 await fetchSolicitudes(true);
             }
+
+            const nombreEtapa = columnas.find(c => c.key === nuevoEstado)?.titulo || nuevoEstado;
+            mostrarToast(
+                pasaAEvaluacion
+                    ? `Movido a "${nombreEtapa}". Gemini está analizando el CV en segundo plano.`
+                    : `Candidato movido a "${nombreEtapa}".`,
+                'success'
+            );
         } catch (error) {
             console.error('Error al actualizar estado:', error);
-            alert(error.response?.data?.message || 'No se pudo actualizar el estado de la solicitud.');
+            mostrarToast(
+                error.response?.data?.message || 'No se pudo actualizar el estado de la solicitud.',
+                'error'
+            );
         } finally {
             setAnalizandoIaId(null);
         }
@@ -224,7 +363,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
 
     const enviarEvaluacion = async () => {
         if (!datosEvaluacion.resultadoGeneral.trim()) {
-            alert('El resultado general es obligatorio.');
+            mostrarToast('El resultado general es obligatorio.', 'error');
             return;
         }
 
@@ -235,10 +374,14 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 observaciones: datosEvaluacion.observaciones
             });
             cerrarModalEvaluacion();
+            mostrarToast('Dictamen psicolaboral guardado y proceso finalizado.', 'success');
             await fetchSolicitudes(true);
         } catch (error) {
             console.error('Error al registrar evaluación:', error);
-            alert(error.response?.data?.message || 'Error al guardar la evaluación psicolaboral.');
+            mostrarToast(
+                error.response?.data?.message || 'Error al guardar la evaluación psicolaboral.',
+                'error'
+            );
         }
     };
 
@@ -247,19 +390,28 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         setDatosEvaluacion({ resultadoGeneral: 'Apto', observaciones: '' });
     };
 
-    const eliminarSolicitud = async (id, nombre) => {
-        if (!window.confirm(`¿Estás seguro de que deseas eliminar la solicitud de ${nombre}?`)) return;
+    const solicitarEliminar = (id, nombre) => {
+        setEliminarModal({ isOpen: true, id, nombre });
+    };
+
+    const confirmarEliminarSolicitud = async () => {
+        const { id, nombre } = eliminarModal;
+        setEliminarModal({ isOpen: false, id: null, nombre: '' });
 
         try {
             await api.delete(`/solicitudes/${id}`);
             setSolicitudSeleccionada(null);
+            mostrarToast(`Solicitud de ${nombre} eliminada correctamente.`, 'success');
             await fetchSolicitudes(true);
         } catch (error) {
             console.error('Error al eliminar solicitud:', error);
             if (error.response?.status === 403) {
-                alert('Solo los usuarios con rol ADMIN pueden eliminar solicitudes.');
+                mostrarToast('Solo los usuarios con rol ADMIN pueden eliminar solicitudes.', 'error');
             } else {
-                alert(error.response?.data?.message || 'No se pudo eliminar la solicitud.');
+                mostrarToast(
+                    error.response?.data?.message || 'No se pudo eliminar la solicitud.',
+                    'error'
+                );
             }
         }
     };
@@ -319,6 +471,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             });
 
             limpiarFormulario();
+            mostrarToast('Postulación registrada con éxito.', 'success');
             await fetchSolicitudes(true);
         } catch (error) {
             console.error('Error al crear postulación:', error);
@@ -819,6 +972,13 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                 )}
 
                                 <button
+                                    className="sidebar-action-btn"
+                                    onClick={() => imprimirFicha(solicitudSeleccionada)}
+                                >
+                                    <FiPrinter /> Exportar Ficha PDF
+                                </button>
+
+                                <button
                                     className="sidebar-action-btn primary-eval-btn"
                                     onClick={() => {
                                         const id = solicitudSeleccionada.id;
@@ -832,7 +992,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                 {esAdmin && (
                                     <button
                                         className="sidebar-action-btn danger-btn"
-                                        onClick={() => eliminarSolicitud(solicitudSeleccionada.id, solicitudSeleccionada.nombreCandidato)}
+                                        onClick={() => solicitarEliminar(solicitudSeleccionada.id, solicitudSeleccionada.nombreCandidato)}
                                     >
                                         <FiTrash2 /> Eliminar Solicitud
                                     </button>
@@ -858,6 +1018,30 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             </button>
                             <button onClick={aceptarConfirmacion} className="btn-guardar">
                                 Continuar y Evaluar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ================= MODAL CONFIRMAR ELIMINACIÓN ================= */}
+            {eliminarModal.isOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ textAlign: 'center', maxWidth: '390px' }}>
+                        <FiTrash2 style={{ fontSize: '40px', color: '#f87171', marginBottom: '12px' }} />
+                        <h3 style={{ marginBottom: '10px', fontSize: '19px' }}>¿Eliminar solicitud?</h3>
+                        <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>
+                            Se eliminará permanentemente la solicitud de <strong>{eliminarModal.nombre}</strong> y su evaluación asociada.
+                        </p>
+                        <div className="modal-buttons" style={{ justifyContent: 'center', gap: '15px' }}>
+                            <button
+                                onClick={() => setEliminarModal({ isOpen: false, id: null, nombre: '' })}
+                                className="btn-cancelar"
+                            >
+                                Cancelar
+                            </button>
+                            <button onClick={confirmarEliminarSolicitud} className="btn-eliminar-confirm">
+                                Sí, Eliminar
                             </button>
                         </div>
                     </div>
@@ -896,6 +1080,27 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                     </div>
                 </div>
             )}
+
+            {/* ================= NOTIFICACIONES TOAST ================= */}
+            <div className="toast-stack">
+                {toasts.map(toast => (
+                    <div key={toast.id} className={`toast-item toast-${toast.tipo}`}>
+                        <span className="toast-icon">
+                            {toast.tipo === 'success' ? (
+                                <FiCheckCircle />
+                            ) : toast.tipo === 'error' ? (
+                                <FiAlertCircle />
+                            ) : (
+                                <FiInfo />
+                            )}
+                        </span>
+                        <span className="toast-text">{toast.texto}</span>
+                        <button className="toast-close" onClick={() => cerrarToast(toast.id)}>
+                            <FiX />
+                        </button>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };
