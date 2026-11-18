@@ -1317,3 +1317,213 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   LAYOUT CON SIDEBAR Y NUEVOS MÓDULOS
+   ========================================================= */
+.portal-shell {
+  display: flex;
+  flex: 1;
+  min-height: calc(100vh - 60px);
+}
+
+.portal-sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: rgba(15, 23, 42, 0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #64748b;
+  padding: 12px 10px 4px;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.sidebar-nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.sidebar-nav-item.active {
+  background: rgba(2, 132, 199, 0.22);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.sidebar-pill {
+  margin-left: auto;
+  background: rgba(15, 23, 42, 0.7);
+  color: #38bdf8;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.portal-content-area {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.module-success-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #6ee7b7;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.module-empty-msg {
+  color: #94a3b8;
+  font-size: 14px;
+  padding: 20px 0;
+}
+
+.status-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.status-toggle-btn.is-active {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.status-toggle-btn.is-inactive {
+  background: rgba(100, 116, 139, 0.16);
+  border-color: rgba(100, 116, 139, 0.4);
+  color: #94a3b8;
+}
+
+.table-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-table-danger {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-table-danger:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.usuarios-layout-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.roles-info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+@media (max-width: 960px) {
+  .portal-shell {
+    flex-direction: column;
+  }
+  .portal-sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .sidebar-group-title {
+    display: none;
+  }
+  .sidebar-nav-item {
+    width: auto;
+  }
+  .usuarios-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Badges y alertas de estado IA */
+.trello-badge.ia-error-badge {
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+.trello-badge.ia-score-badge {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.ia-error-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ia-inline-icon.error {
+  color: #fbbf24;
+  margin-top: 0;
+}
+
+.pipeline-label-left {
+  display: flex;
+  align-items: center;
+}

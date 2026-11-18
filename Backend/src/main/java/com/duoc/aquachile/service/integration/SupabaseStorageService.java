@@ -5,6 +5,8 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.text.Normalizer;
 import java.util.UUID;
 
 @Service
@@ -24,16 +26,22 @@ public class SupabaseStorageService {
 
     public String subirCv(MultipartFile archivo) {
         try {
-            // 1. Generar nombre único para no sobreescribir CVs si se llaman igual
-            String nombreUnico = UUID.randomUUID().toString() + "-" + archivo.getOriginalFilename();
+            // 1. Limpiar tildes, ñ, espacios y caracteres inválidos para Supabase Storage
+            String nombreOriginal = archivo.getOriginalFilename() != null ? archivo.getOriginalFilename() : "cv.pdf";
+            String nombreLimpio = Normalizer.normalize(nombreOriginal, Normalizer.Form.NFD)
+                    .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                    .replaceAll("[^a-zA-Z0-9._-]", "_");
+
+            // 2. Generar nombre único para no sobreescribir CVs si se llaman igual
+            String nombreUnico = UUID.randomUUID().toString() + "-" + nombreLimpio;
             String endpoint = supabaseUrl + "/storage/v1/object/cv_candidatos/" + nombreUnico;
 
-            // 2. Configurar cabeceras (Usando Service Role para bypass de seguridad)
+            // 3. Configurar cabeceras (Usando Service Role para bypass de seguridad)
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(serviceRoleKey);
             headers.setContentType(MediaType.valueOf(archivo.getContentType() != null ? archivo.getContentType() : "application/pdf"));
 
-            // 3. Subir los bytes a Supabase
+            // 4. Subir los bytes a Supabase
             HttpEntity<byte[]> requestEntity = new HttpEntity<>(archivo.getBytes(), headers);
             ResponseEntity<String> response = restTemplate.exchange(endpoint, HttpMethod.POST, requestEntity, String.class);
 

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
     FiSearch, FiPlus, FiClock, FiCpu, FiAlignLeft,
-    FiFilter, FiX, FiLayers
+    FiFilter, FiX, FiLayers, FiAlertTriangle
 } from 'react-icons/fi';
+import { analizarEstadoIa } from '../utils/iaHelper';
 
 const TableroKanban = ({
     solicitudes,
@@ -55,7 +56,6 @@ const TableroKanban = ({
 
     return (
         <div className="trello-board-wrapper">
-            {/* BARRA DE HERRAMIENTAS Y FILTROS DEL TABLERO */}
             <section className="kanban-filter-toolbar">
                 <div className="toolbar-top-row">
                     <div className="board-title-group">
@@ -92,7 +92,6 @@ const TableroKanban = ({
                     </div>
                 </div>
 
-                {/* Píldoras interactivas por Familia de Cargo */}
                 <div className="filter-pills-row">
                     <span className="filter-label-tag"><FiFilter /> Filtrar por área:</span>
 
@@ -132,7 +131,6 @@ const TableroKanban = ({
                 </div>
             </section>
 
-            {/* LIENZO DE COLUMNAS PROPORCIONAL A TODA LA PANTALLA */}
             <main className="trello-lists-canvas">
                 {columnas.map(col => {
                     const tarjetas = solicitudesFiltradas.filter(sol => sol.estado === col.key);
@@ -157,12 +155,11 @@ const TableroKanban = ({
                             <div className="trello-cards-stack">
                                 {tarjetas.map(sol => {
                                     const famColor = obtenerColorFamilia(sol.familiaCargo);
+                                    const enEvaluacionOFinalizada = sol.estado === 'EN_PROCESO' || sol.estado === 'FINALIZADA';
+                                    const infoIa = analizarEstadoIa(sol.recomendacionIa);
                                     const estaAnalizandoIa =
                                         analizandoIaId?.toString() === sol.id.toString() ||
-                                        (sol.estado === 'EN_PROCESO' && !sol.recomendacionIa);
-                                    const mostrarIa =
-                                        (sol.estado === 'EN_PROCESO' || sol.estado === 'FINALIZADA') &&
-                                        Boolean(sol.recomendacionIa);
+                                        (sol.estado === 'EN_PROCESO' && infoIa.estado === 'pendiente');
 
                                     return (
                                         <div
@@ -213,11 +210,19 @@ const TableroKanban = ({
                                                               })
                                                             : 'Hoy'}
                                                     </span>
-                                                    {mostrarIa && (
+
+                                                    {enEvaluacionOFinalizada && infoIa.estado === 'ok' && (
                                                         <span className="trello-badge ia-badge" title="CV evaluado por Gemini IA">
-                                                            <FiCpu /> IA
+                                                            <FiCpu /> {infoIa.puntaje !== null ? `IA: ${infoIa.puntaje}/10` : 'IA'}
                                                         </span>
                                                     )}
+
+                                                    {enEvaluacionOFinalizada && infoIa.estado === 'error' && (
+                                                        <span className="trello-badge ia-error-badge" title="Error al analizar el CV">
+                                                            <FiAlertTriangle /> Error IA
+                                                        </span>
+                                                    )}
+
                                                     {(sol.observaciones || sol.observacionEvaluacion) && (
                                                         <span className="trello-badge" title="Contiene observaciones">
                                                             <FiAlignLeft />

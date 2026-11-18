@@ -1,8 +1,9 @@
 import React from 'react';
 import {
     FiTrello, FiUsers, FiActivity, FiCheckCircle,
-    FiCpu, FiBriefcase, FiAward
+    FiCpu, FiBriefcase, FiAward, FiAlertTriangle
 } from 'react-icons/fi';
+import { analizarEstadoIa } from '../utils/iaHelper';
 
 const MetricasPsicologo = ({
     solicitudes,
@@ -21,8 +22,14 @@ const MetricasPsicologo = ({
     const totalFinalizadas = solicitudes.filter(s => s.estado === 'FINALIZADA').length;
     const tasaFinalizacion = totalSolicitudes > 0 ? Math.round((totalFinalizadas / totalSolicitudes) * 100) : 0;
 
-    const conRecomendacionIa = solicitudes.filter(
-        s => (s.estado === 'EN_PROCESO' || s.estado === 'FINALIZADA') && s.recomendacionIa
+    const conIaExitosa = solicitudes.filter(
+        s => (s.estado === 'EN_PROCESO' || s.estado === 'FINALIZADA') &&
+            analizarEstadoIa(s.recomendacionIa).estado === 'ok'
+    ).length;
+
+    const conErrorIa = solicitudes.filter(
+        s => (s.estado === 'EN_PROCESO' || s.estado === 'FINALIZADA') &&
+            analizarEstadoIa(s.recomendacionIa).estado === 'error'
     ).length;
 
     const aptosCount = solicitudes.filter(s => s.resultadoEvaluacion === 'Apto').length;
@@ -74,8 +81,12 @@ const MetricasPsicologo = ({
                     <div className="kpi-icon-box cyan"><FiCpu /></div>
                     <div className="kpi-details">
                         <span className="kpi-label">CVs Evaluados con IA</span>
-                        <h2 className="kpi-value">{conRecomendacionIa}</h2>
-                        <span className="kpi-sub">Generados al pasar a Evaluación</span>
+                        <h2 className="kpi-value">{conIaExitosa}</h2>
+                        <span className="kpi-sub">
+                            {conErrorIa > 0
+                                ? `${conErrorIa} con error al procesar`
+                                : 'Análisis exitosos de Gemini'}
+                        </span>
                     </div>
                 </div>
             </section>
@@ -94,8 +105,10 @@ const MetricasPsicologo = ({
                             return (
                                 <div key={col.key} className="pipeline-row">
                                     <div className="pipeline-row-label">
-                                        <span className="dot" style={{ backgroundColor: col.color }}></span>
-                                        <span>{col.titulo}</span>
+                                        <div className="pipeline-label-left">
+                                            <span className="dot" style={{ backgroundColor: col.color }}></span>
+                                            <span>{col.titulo}</span>
+                                        </div>
                                         <strong>{count} ({pct}%)</strong>
                                     </div>
                                     <div className="pipeline-track">
@@ -193,7 +206,7 @@ const MetricasPsicologo = ({
                                 const colInfo = columnas.find(c => c.key === sol.estado) || columnas[0];
                                 const famColor = obtenerColorFamilia(sol.familiaCargo);
                                 const enEvaluacionOFinalizada = sol.estado === 'EN_PROCESO' || sol.estado === 'FINALIZADA';
-                                const yaEvaluadoPorIa = enEvaluacionOFinalizada && sol.recomendacionIa;
+                                const infoIa = analizarEstadoIa(sol.recomendacionIa);
 
                                 return (
                                     <tr key={sol.id} onClick={() => onSeleccionarSolicitud(sol)}>
@@ -222,19 +235,28 @@ const MetricasPsicologo = ({
                                             </span>
                                         </td>
                                         <td className="ia-snippet-cell">
-                                            {yaEvaluadoPorIa ? (
+                                            {!enEvaluacionOFinalizada ? (
+                                                <span className="no-ia-text">Se genera al pasar a "En Evaluación"</span>
+                                            ) : infoIa.estado === 'error' ? (
+                                                <span className="ia-error-preview">
+                                                    <FiAlertTriangle className="ia-inline-icon error" />
+                                                    Error al procesar CV con IA
+                                                </span>
+                                            ) : infoIa.estado === 'sin_cv' ? (
+                                                <span className="no-ia-text">Sin CV adjunto para analizar</span>
+                                            ) : infoIa.estado === 'ok' ? (
                                                 <span className="ia-preview-text">
-                                                    <FiCpu className="ia-inline-icon" />
-                                                    {sol.recomendacionIa.length > 75
-                                                        ? `${sol.recomendacionIa.substring(0, 75)}...`
+                                                    {infoIa.puntaje !== null && (
+                                                        <span className="trello-badge ia-score-badge">
+                                                            {infoIa.puntaje}/10
+                                                        </span>
+                                                    )}
+                                                    {sol.recomendacionIa.length > 70
+                                                        ? `${sol.recomendacionIa.substring(0, 70)}...`
                                                         : sol.recomendacionIa}
                                                 </span>
                                             ) : (
-                                                <span className="no-ia-text">
-                                                    {sol.estado === 'EN_PROCESO'
-                                                        ? 'Analizando CV en segundo plano...'
-                                                        : 'Se genera al pasar a "En Evaluación"'}
-                                                </span>
+                                                <span className="no-ia-text">Analizando CV en segundo plano...</span>
                                             )}
                                         </td>
                                         <td className="date-cell">

@@ -6,11 +6,14 @@ import {
     FiCpu, FiTrash2, FiX, FiAlignLeft,
     FiUserCheck, FiFileText, FiUploadCloud,
     FiUser, FiMail, FiPhone, FiCreditCard, FiBriefcase,
-    FiCalendar, FiRefreshCw
+    FiCalendar, FiRefreshCw, FiUsers, FiUserPlus
 } from 'react-icons/fi';
 import api from '../services/api';
 import MetricasPsicologo from './MetricasPsicologo';
 import TableroKanban from './TableroKanban';
+import GestionOfertas from './GestionOfertas';
+import DirectorioCandidatos from './DirectorioCandidatos';
+import GestionUsuarios from './GestionUsuarios';
 import './DashboardPsicologo.css';
 
 const opcionesCargos = {
@@ -46,6 +49,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [refrescando, setRefrescando] = useState(false);
     const [analizandoIaId, setAnalizandoIaId] = useState(null);
 
+    // Vistas: 'overview' | 'board' | 'candidatos' | 'ofertas' | 'usuarios'
     const [vistaActiva, setVistaActiva] = useState('overview');
     const [busqueda, setBusqueda] = useState('');
     const [filtroFamilia, setFiltroFamilia] = useState('TODAS');
@@ -69,6 +73,8 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [cvFile, setCvFile] = useState(null);
     const [guardandoPostulacion, setGuardandoPostulacion] = useState(false);
 
+    const esAdmin = usuario?.rol === 'ADMIN';
+
     const columnas = [
         { key: 'NUEVA_POSTULACION', titulo: 'Nuevas Postulaciones', color: '#38bdf8' },
         { key: 'PENDIENTE', titulo: 'Pendientes de Revisión', color: '#f59e0b' },
@@ -84,7 +90,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             const response = await api.get('/solicitudes');
             if (Array.isArray(response.data)) {
                 setSolicitudes(response.data);
-                // Si el modal de detalle está abierto, sincroniza sus datos (ej. cuando llega recomendacionIa)
                 setSolicitudSeleccionada(prev => {
                     if (!prev) return null;
                     return response.data.find(item => item.id === prev.id) || prev;
@@ -105,6 +110,20 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     useEffect(() => {
         fetchSolicitudes();
     }, []);
+
+    // Polling automático cada 12s solo si hay solicitudes en EN_PROCESO esperando respuesta de Gemini
+    useEffect(() => {
+        const hayPendientesIa = solicitudes.some(
+            s => s.estado === 'EN_PROCESO' && !s.recomendacionIa
+        );
+        if (!hayPendientesIa) return;
+
+        const intervalo = setInterval(() => {
+            fetchSolicitudes(true);
+        }, 12000);
+
+        return () => clearInterval(intervalo);
+    }, [solicitudes]);
 
     const handleDropTarjeta = (id, estadoActual, nuevoEstado) => {
         if (!id || estadoActual === nuevoEstado) return;
@@ -170,7 +189,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         }
 
         try {
-            // EvaluacionService ya cambia automáticamente el estado a FINALIZADA en el backend
             await api.post('/evaluaciones', {
                 solicitudId: parseInt(evaluacionModal.solicitudId, 10),
                 resultadoGeneral: datosEvaluacion.resultadoGeneral,
@@ -294,7 +312,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
 
     const listaSegura = Array.isArray(solicitudes) ? solicitudes : [];
 
-    // Combina las áreas base con cualquier área adicional que exista en la base de datos (ej: TI)
     const areasDisponibles = Array.from(
         new Set([
             ...Object.keys(opcionesCargos),
@@ -322,22 +339,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                         <span className="brand-name">AquaChile</span>
                     </Link>
                     <span className="workspace-badge">Portal Psicólogos</span>
-
-                    <nav className="workspace-nav">
-                        <button
-                            className={`nav-tab-btn ${vistaActiva === 'overview' ? 'active' : ''}`}
-                            onClick={() => setVistaActiva('overview')}
-                        >
-                            <FiPieChart /> Resumen y Métricas
-                        </button>
-                        <button
-                            className={`nav-tab-btn ${vistaActiva === 'board' ? 'active' : ''}`}
-                            onClick={() => setVistaActiva('board')}
-                        >
-                            <FiTrello /> Tablero Kanban
-                            <span className="tab-pill">{listaSegura.length}</span>
-                        </button>
-                    </nav>
                 </div>
 
                 <div className="topbar-right">
@@ -359,7 +360,9 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                         <div className="user-avatar">
                             {obtenerIniciales(usuario?.nombre || 'Evaluador')}
                         </div>
-                        <span className="user-name">{usuario?.nombre || 'Evaluador'}</span>
+                        <span className="user-name">
+                            {usuario?.nombre || 'Evaluador'} ({usuario?.rol || 'USER'})
+                        </span>
                     </div>
 
                     <button onClick={alCerrarSesion} className="btn-trello-logout" title="Cerrar Sesión">
@@ -368,38 +371,93 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 </div>
             </header>
 
-            {/* RENDERIZADO DE PANTALLAS SEPARADAS */}
-            {vistaActiva === 'overview' ? (
-                <MetricasPsicologo
-                    solicitudes={listaSegura}
-                    solicitudesFiltradas={solicitudesFiltradas}
-                    columnas={columnas}
-                    areasDisponibles={areasDisponibles}
-                    obtenerColorFamilia={obtenerColorFamilia}
-                    obtenerIniciales={obtenerIniciales}
-                    onIrAlTablero={() => setVistaActiva('board')}
-                    onSeleccionarSolicitud={setSolicitudSeleccionada}
-                />
-            ) : (
-                <TableroKanban
-                    solicitudes={listaSegura}
-                    solicitudesFiltradas={solicitudesFiltradas}
-                    columnas={columnas}
-                    areasDisponibles={areasDisponibles}
-                    obtenerColorFamilia={obtenerColorFamilia}
-                    busqueda={busqueda}
-                    setBusqueda={setBusqueda}
-                    filtroFamilia={filtroFamilia}
-                    setFiltroFamilia={setFiltroFamilia}
-                    analizandoIaId={analizandoIaId}
-                    obtenerIniciales={obtenerIniciales}
-                    onSeleccionarSolicitud={setSolicitudSeleccionada}
-                    onAbrirCrearEnColumna={abrirModalCrear}
-                    onDropTarjeta={handleDropTarjeta}
-                />
-            )}
+            {/* ESTRUCTURA CON SIDEBAR + CONTENIDO PRINCIPAL */}
+            <div className="portal-shell">
+                <aside className="portal-sidebar">
+                    <div className="sidebar-group-title">Selección</div>
+                    <button
+                        className={`sidebar-nav-item ${vistaActiva === 'overview' ? 'active' : ''}`}
+                        onClick={() => setVistaActiva('overview')}
+                    >
+                        <FiPieChart /> <span>Resumen y Métricas</span>
+                    </button>
+                    <button
+                        className={`sidebar-nav-item ${vistaActiva === 'board' ? 'active' : ''}`}
+                        onClick={() => setVistaActiva('board')}
+                    >
+                        <FiTrello /> <span>Tablero Kanban</span>
+                        <span className="sidebar-pill">{listaSegura.length}</span>
+                    </button>
+                    <button
+                        className={`sidebar-nav-item ${vistaActiva === 'candidatos' ? 'active' : ''}`}
+                        onClick={() => setVistaActiva('candidatos')}
+                    >
+                        <FiUsers /> <span>Directorio Candidatos</span>
+                    </button>
 
-            {/* ================= MODAL CREAR NUEVA POSTULACIÓN (CON RUT Y FECHA DE NACIMIENTO) ================= */}
+                    {esAdmin && (
+                        <>
+                            <div className="sidebar-group-title">Administración</div>
+                            <button
+                                className={`sidebar-nav-item ${vistaActiva === 'ofertas' ? 'active' : ''}`}
+                                onClick={() => setVistaActiva('ofertas')}
+                            >
+                                <FiBriefcase /> <span>Gestión de Ofertas</span>
+                            </button>
+                            <button
+                                className={`sidebar-nav-item ${vistaActiva === 'usuarios' ? 'active' : ''}`}
+                                onClick={() => setVistaActiva('usuarios')}
+                            >
+                                <FiUserPlus /> <span>Gestión de Equipo</span>
+                            </button>
+                        </>
+                    )}
+                </aside>
+
+                <div className="portal-content-area">
+                    {vistaActiva === 'overview' && (
+                        <MetricasPsicologo
+                            solicitudes={listaSegura}
+                            solicitudesFiltradas={solicitudesFiltradas}
+                            columnas={columnas}
+                            areasDisponibles={areasDisponibles}
+                            obtenerColorFamilia={obtenerColorFamilia}
+                            obtenerIniciales={obtenerIniciales}
+                            onIrAlTablero={() => setVistaActiva('board')}
+                            onSeleccionarSolicitud={setSolicitudSeleccionada}
+                        />
+                    )}
+
+                    {vistaActiva === 'board' && (
+                        <TableroKanban
+                            solicitudes={listaSegura}
+                            solicitudesFiltradas={solicitudesFiltradas}
+                            columnas={columnas}
+                            areasDisponibles={areasDisponibles}
+                            obtenerColorFamilia={obtenerColorFamilia}
+                            busqueda={busqueda}
+                            setBusqueda={setBusqueda}
+                            filtroFamilia={filtroFamilia}
+                            setFiltroFamilia={setFiltroFamilia}
+                            analizandoIaId={analizandoIaId}
+                            obtenerIniciales={obtenerIniciales}
+                            onSeleccionarSolicitud={setSolicitudSeleccionada}
+                            onAbrirCrearEnColumna={abrirModalCrear}
+                            onDropTarjeta={handleDropTarjeta}
+                        />
+                    )}
+
+                    {vistaActiva === 'candidatos' && (
+                        <DirectorioCandidatos obtenerIniciales={obtenerIniciales} />
+                    )}
+
+                    {vistaActiva === 'ofertas' && esAdmin && <GestionOfertas />}
+
+                    {vistaActiva === 'usuarios' && esAdmin && <GestionUsuarios />}
+                </div>
+            </div>
+
+            {/* ================= MODAL CREAR NUEVA POSTULACIÓN ================= */}
             {crearModalOpen && (
                 <div className="modal-overlay" onClick={() => setCrearModalOpen(false)}>
                     <div className="modern-create-modal" onClick={(e) => e.stopPropagation()}>
@@ -604,7 +662,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                     </div>
                                 </div>
 
-                                {/* Bloque Recomendación IA */}
                                 <div className="trello-section-block ia-block">
                                     <div className="section-block-title" style={{ justifyContent: 'space-between' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -623,7 +680,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                     {solicitudSeleccionada.estado === 'EN_PROCESO' || solicitudSeleccionada.estado === 'FINALIZADA' ? (
                                         <p className="ia-content-box">
                                             {solicitudSeleccionada.recomendacionIa ||
-                                                'Gemini está analizando el CV en segundo plano. Presiona "Comprobar resultado" en unos momentos.'}
+                                                'Gemini está analizando el CV en segundo plano. Se actualizará automáticamente en unos segundos.'}
                                         </p>
                                     ) : (
                                         <div className="eval-pending-box">
@@ -694,12 +751,14 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                     <FiCheckCircle /> Evaluar y Finalizar
                                 </button>
 
-                                <button
-                                    className="sidebar-action-btn danger-btn"
-                                    onClick={() => eliminarSolicitud(solicitudSeleccionada.id, solicitudSeleccionada.nombreCandidato)}
-                                >
-                                    <FiTrash2 /> Eliminar Solicitud
-                                </button>
+                                {esAdmin && (
+                                    <button
+                                        className="sidebar-action-btn danger-btn"
+                                        onClick={() => eliminarSolicitud(solicitudSeleccionada.id, solicitudSeleccionada.nombreCandidato)}
+                                    >
+                                        <FiTrash2 /> Eliminar Solicitud
+                                    </button>
+                                )}
                             </aside>
                         </div>
                     </div>
