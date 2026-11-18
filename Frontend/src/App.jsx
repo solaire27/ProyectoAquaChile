@@ -8,13 +8,17 @@ import SobreNosotros from './componentes/SobreNosotros';
 import CargosDisponibles from './componentes/CargosDisponibles';
 import EstadoPostulacion from './componentes/EstadoPostulacion';
 
-// Cambia a false cuando conectes el backend real
-const MODO_DISENO_OFFLINE = true;
+const obtenerUsuarioGuardado = () => {
+  try {
+    const guardado = localStorage.getItem('usuario');
+    return guardado ? JSON.parse(guardado) : null;
+  } catch {
+    return null;
+  }
+};
 
 function App() {
-  const [usuario, setUsuario] = useState(
-    MODO_DISENO_OFFLINE ? { nombre: 'Psicólogo Demo', correo: 'psicologo@aquachile.com', rol: 'PSICOLOGO' } : null
-  );
+  const [usuario, setUsuario] = useState(obtenerUsuarioGuardado);
   const navigate = useNavigate();
 
   const manejarAutenticacion = (user) => {
@@ -24,11 +28,12 @@ function App() {
 
   const cerrarSesion = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('usuario');
     setUsuario(null);
     navigate('/login');
   };
 
-  const estaAutenticado = MODO_DISENO_OFFLINE || usuario || localStorage.getItem('token');
+  const estaAutenticado = Boolean(localStorage.getItem('token'));
 
   return (
     <div style={{ width: '100%', minHeight: '100vh', backgroundColor: '#0b192c' }}>

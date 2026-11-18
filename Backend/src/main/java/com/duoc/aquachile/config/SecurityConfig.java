@@ -29,13 +29,17 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // 1. Endpoints públicos de la API
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/postulaciones/public/**",
                                 "/api/ofertas/public",
                                 "/api/solicitudes/estado"
                         ).permitAll()
-                        .anyRequest().authenticated()
+                        // 2. El resto de la API requiere JWT obligatoriamente
+                        .requestMatchers("/api/**").authenticated()
+                        // 3. Permitir el frontend (index.html, /assets/** y rutas de React)
+                        .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

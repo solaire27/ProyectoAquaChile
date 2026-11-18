@@ -1,312 +1,1319 @@
-.kanban-page {
+/* =========================================================
+   WORKSPACE GENERAL & BARRA SUPERIOR
+   ========================================================= */
+.trello-workspace {
   width: 100vw;
   min-height: 100vh;
-  background-color: #0b192c;
-  display: flex;
-  flex-direction: column;
-}
-
-.kanban-header {
-  padding: 16px 32px;
-  background-color: #1e293b;
-  border-bottom: 1px solid #334155;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.kanban-branding {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.kanban-logo {
-  font-size: 24px;
-  font-weight: 800;
-  color: #38bdf8;
-}
-
-.kanban-badge {
-  background-color: #0f172a;
-  color: #94a3b8;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 12px;
-  border: 1px solid #334155;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 14px;
-  color: #cbd5e1;
-}
-
-.btn-logout {
-  background: transparent;
-  border: 1px solid #ef4444;
-  color: #ef4444;
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.btn-logout:hover {
-  background: #ef4444;
-  color: white;
-}
-
-.kanban-board {
-  flex: 1;
-  padding: 24px 32px;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  overflow-x: auto;
-}
-
-.kanban-column {
-  background-color: #1e293b;
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 120px);
-  border: 1px solid #334155;
-}
-
-.column-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #334155;
-}
-
-.column-title-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.column-header h3 {
-  font-size: 15px;
-  font-weight: 700;
+  background: linear-gradient(145deg, #0b192c 0%, #0f2942 55%, #0a192f 100%);
   color: #f1f5f9;
-}
-
-.card-count {
-  background-color: #0f172a;
-  color: #94a3b8;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-weight: 600;
-}
-
-.cards-container {
-  flex: 1;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
 }
 
-.kanban-card {
-  background-color: #0f172a;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  padding: 14px;
-  cursor: pointer;
-  transition: transform 0.15s, border-color 0.15s;
-}
-
-.kanban-card:hover {
-  transform: translateY(-2px);
-  border-color: #38bdf8;
-}
-
-.card-tag {
-  display: inline-block;
-  background-color: rgba(56, 189, 248, 0.1);
-  color: #38bdf8;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-}
-
-.card-candidate-name {
-  font-size: 15px;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 4px;
-}
-
-.card-position {
-  font-size: 13px;
-  color: #94a3b8;
-  margin-bottom: 12px;
-}
-
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: #64748b;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 8px;
-}
-
-.empty-column {
-  text-align: center;
-  color: #475569;
-  font-size: 13px;
-  margin-top: 30px;
-  font-style: italic;
-}
-
-.kanban-loading {
+.trello-loading {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
+  background-color: #0b192c;
   color: #38bdf8;
   font-size: 18px;
   font-weight: 600;
 }
 
-/* ESTILOS PARA EL MODAL */
+.trello-topbar {
+  height: 60px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-left,
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.trello-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.trello-brand:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.brand-wave {
+  width: 32px;
+  height: 32px;
+  background: #0284c7;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.brand-name {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.4px;
+}
+
+.workspace-badge {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.workspace-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.nav-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: #cbd5e1;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-tab-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+}
+
+.tab-pill {
+  background: rgba(15, 23, 42, 0.45);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.btn-trello-refresh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+  padding: 8px 13px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-trello-refresh:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+@keyframes spinRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-refresh {
+  animation: spinRotate 0.9s linear infinite;
+}
+
+.btn-trello-create {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.btn-trello-create:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(56, 189, 248, 0.45);
+}
+
+.user-profile-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.btn-trello-logout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-trello-logout:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* =========================================================
+   VISTA 1: MAIN VIEW (OVERVIEW & MÉTRICAS)
+   ========================================================= */
+.overview-container {
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 32px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.overview-welcome {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 22px 28px;
+  border-radius: 14px;
+}
+
+.overview-welcome h1 {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+  color: #ffffff;
+}
+
+.overview-welcome p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.btn-go-board {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  padding: 11px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+}
+
+.btn-go-board:hover {
+  background: #0369a1;
+  transform: translateY(-1px);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.kpi-card {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.kpi-icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.kpi-icon-box.blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+.kpi-icon-box.purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+.kpi-icon-box.green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.kpi-icon-box.cyan { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
+
+.kpi-details { display: flex; flex-direction: column; }
+.kpi-label { font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+.kpi-value { font-size: 28px; font-weight: 800; color: #ffffff; margin: 2px 0; }
+.kpi-sub { font-size: 12px; color: #64748b; }
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.chart-card {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.chart-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-subtitle { font-size: 12px; color: #64748b; }
+.pipeline-bars, .familia-distribution { display: flex; flex-direction: column; gap: 14px; }
+.pipeline-row-label, .familia-stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+}
+
+.pipeline-row-label .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.pipeline-track {
+  width: 100%;
+  height: 8px;
+  background: #0f172a;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.pipeline-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.familia-stat-number { font-size: 12px; color: #94a3b8; font-weight: 600; }
+
+.evaluation-summary-boxes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.eval-stat-box {
+  padding: 16px 10px;
+  border-radius: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eval-stat-box.apto { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; }
+.eval-stat-box.obs { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; }
+.eval-stat-box.no-apto { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; }
+
+.eval-num { font-size: 24px; font-weight: 800; }
+.eval-title { font-size: 11px; font-weight: 600; }
+.eval-helper-note {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: auto 0 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.recent-candidates-card {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 22px;
+}
+
+.recent-header h3 { margin: 0 0 4px 0; font-size: 17px; color: #ffffff; }
+.recent-header p { margin: 0 0 16px 0; font-size: 13px; color: #94a3b8; }
+.table-responsive { overflow-x: auto; }
+.ats-table { width: 100%; border-collapse: collapse; text-align: left; }
+.ats-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  padding: 12px 14px;
+  border-bottom: 1px solid #334155;
+}
+.ats-table td {
+  padding: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+  vertical-align: middle;
+}
+.ats-table tbody tr { cursor: pointer; transition: background 0.15s; }
+.ats-table tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
+.table-candidate-cell { display: flex; align-items: center; gap: 10px; }
+.mini-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0284c7;
+  color: white;
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.candidate-strong { font-weight: 700; color: #f8fafc; }
+.candidate-sub { font-size: 11px; color: #64748b; }
+.table-cargo-text { margin-top: 4px; color: #cbd5e1; font-weight: 500; }
+.stage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(15, 23, 42, 0.5);
+}
+.stage-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+.ia-snippet-cell { max-width: 320px; }
+.ia-preview-text { display: flex; align-items: flex-start; gap: 6px; color: #cbd5e1; font-size: 12px; line-height: 1.4; }
+.ia-inline-icon { color: #38bdf8; flex-shrink: 0; margin-top: 2px; }
+.no-ia-text { color: #64748b; font-style: italic; font-size: 12px; }
+.btn-table-view {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-table-view:hover { background: #0284c7; color: #ffffff; }
+
+/* =========================================================
+   VISTA 2: TABLERO KANBAN PROPORCIONAL Y FILTROS INTUITIVOS
+   ========================================================= */
+.trello-board-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 20px 28px 32px;
+  gap: 20px;
+}
+
+.kanban-filter-toolbar {
+  background: rgba(30, 41, 59, 0.75);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.toolbar-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.board-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.board-icon-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.board-title-group h2 {
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0 0 2px 0;
+  color: #ffffff;
+}
+
+.board-subtitle-text {
+  font-size: 12.5px;
+  color: #94a3b8;
+}
+
+.kanban-Controls-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.kanban-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.kanban-search-box .search-icon {
+  position: absolute;
+  left: 12px;
+  color: #38bdf8;
+  font-size: 15px;
+}
+
+.kanban-search-box input {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #ffffff;
+  padding: 9px 34px 9px 36px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  width: 290px;
+  transition: all 0.2s;
+}
+
+.kanban-search-box input:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.clear-input-btn {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.btn-clear-filters {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-clear-filters:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.filter-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.filter-label-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-right: 4px;
+}
+
+.area-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.area-filter-pill:hover {
+  border-color: #64748b;
+  transform: translateY(-1px);
+}
+
+.area-filter-pill.active-all {
+  background: #38bdf8;
+  color: #0f172a;
+  border-color: #38bdf8;
+  font-weight: 700;
+}
+
+.pill-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.pill-counter {
+  background: rgba(255, 255, 255, 0.12);
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.area-filter-pill.active-all .pill-counter {
+  background: rgba(15, 23, 42, 0.2);
+  color: #0f172a;
+}
+
+/* =========================================================
+   GRID KANBAN DE PANTALLA COMPLETA (4 COLUMNAS PROPORCIONALES)
+   ========================================================= */
+.trello-lists-canvas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(290px, 1fr));
+  align-items: start;
+  gap: 20px;
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 16px;
+}
+
+.trello-list {
+  background: #161f30;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  width: 100%;
+  max-height: calc(100vh - 235px);
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.28);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.trello-list.drag-over-list {
+  border-color: #38bdf8;
+  background: #1e293b;
+}
+
+.trello-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 4px 4px 0 0;
+}
+
+.list-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.list-color-bar {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.trello-list-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.trello-list-count {
+  background: #0f172a;
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.trello-cards-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding: 4px 2px 8px;
+}
+
+.trello-card {
+  background-color: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: grab;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  transition: all 0.15s ease;
+}
+
+.trello-card:hover {
+  background-color: #263349;
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+}
+
+.trello-card:active {
+  cursor: grabbing;
+}
+
+.trello-card-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.trello-label-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 5px;
+  letter-spacing: 0.2px;
+}
+
+.trello-label-pill.small {
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+.trello-eval-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+
+.trello-eval-pill.eval-green { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+.trello-eval-pill.eval-red { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+
+.trello-card-title {
+  margin: 0 0 4px 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.trello-card-subtitle {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.ia-analyzing-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+@keyframes pulseIa {
+  0% { opacity: 0.5; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 0.5; transform: scale(0.95); }
+}
+
+.spin-icon {
+  animation: pulseIa 1.2s infinite ease-in-out;
+}
+
+.trello-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.trello-card-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trello-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.trello-badge.ia-badge {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.trello-card-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.trello-empty-slot {
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 26px 14px;
+  text-align: center;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.trello-add-card-btn {
+  margin-top: 10px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.trello-add-card-btn:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+/* =========================================================
+   MODAL MODERNO DE CREACIÓN DE POSTULACIÓN
+   ========================================================= */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(6, 12, 24, 0.78);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
 }
+
+.modern-create-modal {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 640px;
+  color: #f8fafc;
+  padding: 28px 32px;
+  position: relative;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.create-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.create-header-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.create-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+}
+
+.create-header-title h3 { margin: 0 0 4px 0; font-size: 20px; font-weight: 800; }
+.create-header-title p { margin: 0; font-size: 13px; color: #94a3b8; }
+.create-header-title strong { color: #38bdf8; }
+
+.create-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.create-modal-form { display: flex; flex-direction: column; gap: 16px; }
+.create-form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.create-field { display: flex; flex-direction: column; gap: 7px; }
+.create-field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+.create-field label span { color: #f87171; }
+
+.create-field input,
+.create-field select,
+.create-field textarea {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #ffffff;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color-scheme: dark;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.create-field input:focus,
+.create-field select:focus,
+.create-field textarea:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.modern-cv-dropzone {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 2px dashed #334155;
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modern-cv-dropzone:hover {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.dropzone-icon { font-size: 28px; color: #38bdf8; flex-shrink: 0; }
+.dropzone-texts { display: flex; flex-direction: column; gap: 3px; }
+.dropzone-texts strong { font-size: 13.5px; color: #f1f5f9; }
+.dropzone-texts span { font-size: 11.5px; color: #64748b; }
+
+.create-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-guardar-modern {
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  border: none;
+  color: #ffffff;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+}
+
+.btn-guardar-modern:hover { background: #0284c7; }
+
+/* =========================================================
+   MODALES DE DETALLE Y EVALUACIÓN
+   ========================================================= */
+.trello-detail-modal {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 780px;
+  color: #f1f5f9;
+  padding: 26px 28px;
+  position: relative;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.trello-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: #cbd5e1;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.trello-modal-close:hover { background: rgba(255, 255, 255, 0.15); color: #ffffff; }
+.trello-modal-header { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+
+.modal-avatar-large {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.modal-title-row h2 { margin: 0; font-size: 22px; color: #ffffff; }
+
+.modal-id-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.6);
+  color: #94a3b8;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.modal-subtitle-list { margin: 4px 0 0 0; font-size: 13px; color: #9fadbc; }
+.underline-stage { text-decoration: underline; color: #38bdf8; font-weight: 600; }
+
+.trello-modal-body { display: grid; grid-template-columns: 1fr 200px; gap: 24px; }
+.trello-modal-main { display: flex; flex-direction: column; gap: 20px; }
+
+.trello-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  background: rgba(15, 23, 42, 0.55);
+  padding: 12px 16px;
+  border-radius: 10px;
+}
+
+.meta-item { display: flex; flex-direction: column; gap: 4px; }
+.meta-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
+.meta-val { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #e2e8f0; font-weight: 500; }
+
+.trello-section-block { display: flex; flex-direction: column; gap: 8px; }
+.section-block-title { display: flex; align-items: center; gap: 8px; font-size: 15px; color: #ffffff; }
+.section-block-title h4 { margin: 0; font-size: 15px; font-weight: 700; }
+.icon-cyan { color: #38bdf8; }
+
+.btn-mini-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-mini-refresh:hover { background: #0284c7; color: #ffffff; }
+
+.ia-content-box {
+  margin: 0;
+  background: rgba(2, 132, 199, 0.14);
+  border-left: 4px solid #38bdf8;
+  padding: 14px 16px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #e0f2fe;
+  white-space: pre-wrap;
+}
+
+.description-box {
+  background: #0f172a;
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+.eval-result-card {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 14px 16px;
+  border-radius: 8px;
+}
+
+.eval-status-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+.eval-highlight { color: #34d399; }
+.eval-result-card p { margin: 0; font-size: 13px; color: #cbd5e1; }
+.eval-pending-box { background: #0f172a; padding: 12px 16px; border-radius: 8px; font-size: 13px; color: #94a3b8; }
+
+.trello-modal-sidebar { display: flex; flex-direction: column; gap: 8px; }
+.trello-modal-sidebar h5 { margin: 0 0 4px 0; font-size: 11px; text-transform: uppercase; color: #9fadbc; letter-spacing: 0.5px; }
+
+.sidebar-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.sidebar-action-btn:hover:not(:disabled) { border-color: #38bdf8; background: #162235; }
+.sidebar-action-btn.current-stage { opacity: 0.45; cursor: default; }
+.sidebar-action-btn .dot { width: 8px; height: 8px; border-radius: 50%; }
+.sidebar-action-btn.primary-eval-btn { background: #0284c7; border-color: #0284c7; color: #ffffff; }
+.sidebar-action-btn.primary-eval-btn:hover { background: #0369a1; }
+.sidebar-action-btn.danger-btn { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+.sidebar-action-btn.danger-btn:hover { background: #ef4444; color: #ffffff; }
+
 .modal-content {
   background: #1e293b;
   border: 1px solid #334155;
   padding: 24px;
-  border-radius: 12px;
-  width: 400px;
+  border-radius: 14px;
+  width: 420px;
   color: #f1f5f9;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
-.modal-info p {
-  margin-bottom: 8px;
-  color: #cbd5e1;
-}
+
 .modal-actions {
-  margin-top: 20px;
+  margin-top: 12px;
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  font-size: 13px;
 }
-.modal-select {
+
+.modal-select,
+.modal-textarea {
   padding: 10px;
   background: #0f172a;
   color: white;
   border: 1px solid #334155;
-  border-radius: 6px;
+  border-radius: 8px;
+  font-family: inherit;
 }
-.modal-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+
+.modal-textarea:focus,
+.modal-select:focus {
+  outline: none;
+  border-color: #38bdf8;
 }
+
+.modal-buttons { display: flex; justify-content: flex-end; gap: 12px; }
 .btn-cancelar {
   background: transparent;
   border: 1px solid #64748b;
   color: #cbd5e1;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
   cursor: pointer;
 }
 .btn-guardar {
   background: #0ea5e9;
   border: none;
   color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
 }
-.btn-guardar:hover {
-  background: #0284c7;
-}
-.btn-eliminar:hover {
-  background: #dc2626 !important;
+
+@media (max-width: 1250px) {
+  .trello-lists-canvas {
+    grid-template-columns: repeat(4, minmax(280px, 1fr));
+  }
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* Estilos Drag & Drop */
-.kanban-card {
-  cursor: grab;
-}
-.kanban-card:active {
-  cursor: grabbing;
-}
-.kanban-column {
-  transition: background-color 0.2s;
-}
-
-/* Estilos de inputs del Modal Evaluación */
-.modal-textarea {
-  padding: 10px;
-  background: #0f172a;
-  color: white;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  resize: vertical;
-  font-family: inherit;
-}
-.modal-textarea:focus, .modal-select:focus {
-  outline: none;
-  border-color: #38bdf8;
-}
-
-.btn-eliminar {
-  background: #ef4444;
-  border: none;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-right: auto;
-}
-.btn-eliminar:hover {
-  background: #dc2626;
-}
-/* Botón para crear nueva postulación */
-.btn-crear {
-  background-color: #0284c7;
-  color: #ffffff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-right: 8px;
-}
-
-.btn-crear:hover {
-  background-color: #0369a1;
+@media (max-width: 768px) {
+  .create-form-grid-2,
+  .trello-modal-body {
+    grid-template-columns: 1fr;
+  }
 }
