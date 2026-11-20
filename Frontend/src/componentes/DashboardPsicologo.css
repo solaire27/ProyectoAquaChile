@@ -1662,3 +1662,557 @@
 .toast-close:hover {
   color: #ffffff;
 }
+
+/* =========================================================
+   REDISEÑO EJECUTIVO: SUBTABS Y RENDIMIENTO DEL EQUIPO (ADMIN)
+   ========================================================= */
+.overview-welcome-pro {
+  background: rgba(30, 41, 59, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 22px 28px 18px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.welcome-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.welcome-top-row h1 {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+  color: #ffffff;
+}
+
+.welcome-top-row p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.metrics-subtabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  flex-wrap: wrap;
+}
+
+.metrics-subtab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.metrics-subtab-btn:hover {
+  color: #ffffff;
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+.metrics-subtab-btn.active {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+}
+
+.subtab-count {
+  background: rgba(15, 23, 42, 0.45);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+}
+
+.subtab-alert-dot {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Alerta accionable de postulaciones sin asignar */
+.unassigned-alert-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(217, 119, 6, 0.08));
+  border: 1px solid rgba(245, 158, 11, 0.38);
+  border-radius: 14px;
+  padding: 18px 22px;
+}
+
+.unassigned-alert-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.unassigned-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.unassigned-alert-left h4 {
+  margin: 0 0 4px 0;
+  font-size: 15.5px;
+  color: #fef3c7;
+}
+
+.unassigned-alert-left p {
+  margin: 0;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.btn-assign-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f59e0b;
+  color: #0f172a;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s;
+}
+
+.btn-assign-now:hover {
+  background: #fbbf24;
+  transform: translateY(-1px);
+}
+
+.kpi-icon-box.amber {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+}
+
+.kpi-card-warn {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+/* Barra de controles del equipo */
+.team-controls-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 16px 22px;
+  border-radius: 14px;
+}
+
+.team-controls-title h3 {
+  margin: 0 0 3px 0;
+  font-size: 17px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-controls-title span {
+  font-size: 12.5px;
+  color: #94a3b8;
+}
+
+.team-controls-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.team-sort-select {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #f1f5f9;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.team-sort-select:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+
+/* Grid de Tarjetas Ejecutivas de Psicólogos */
+.psychologist-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.psi-scorecard {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.psi-scorecard:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  transform: translateY(-2px);
+}
+
+.psi-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.psi-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.psi-avatar-xl {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 6px 14px rgba(2, 132, 199, 0.35);
+}
+
+.psi-identity h4 {
+  margin: 0 0 2px 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.psi-identity span {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.workload-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid;
+}
+
+.workload-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.workload-pill.load-free { background: rgba(16, 185, 129, 0.14); border-color: rgba(16, 185, 129, 0.35); color: #34d399; }
+.workload-pill.load-ok { background: rgba(56, 189, 248, 0.14); border-color: rgba(56, 189, 248, 0.35); color: #38bdf8; }
+.workload-pill.load-warn { background: rgba(245, 158, 11, 0.14); border-color: rgba(245, 158, 11, 0.35); color: #fbbf24; }
+.workload-pill.load-high { background: rgba(239, 68, 68, 0.14); border-color: rgba(239, 68, 68, 0.35); color: #f87171; }
+
+/* Anillo SVG + Cuadrante de 4 Métricas */
+.psi-card-metrics-body {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.ring-container {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  flex-shrink: 0;
+}
+
+.ring-svg {
+  transform: rotate(-90deg);
+}
+
+.ring-track {
+  stroke: #0f172a;
+}
+
+.ring-progress {
+  stroke: #10b981;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.ring-center-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.ring-center-text strong {
+  font-size: 19px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.ring-center-text span {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.psi-stat-quad {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.psi-mini-tile {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.psi-tile-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.psi-tile-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.psi-tile-value.amber { color: #fbbf24; }
+.psi-tile-value.purple { color: #c084fc; }
+.psi-tile-value.green { color: #34d399; }
+
+/* Sección de Dictámenes con Barra Apilada */
+.psi-verdicts-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.psi-verdicts-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.psi-verdicts-top strong {
+  color: #ffffff;
+}
+
+.verdict-stacked-bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #0f172a;
+  overflow: hidden;
+  display: flex;
+}
+
+.vbar-seg.apto { background: #10b981; height: 100%; }
+.vbar-seg.obs { background: #f59e0b; height: 100%; }
+.vbar-seg.no-apto { background: #ef4444; height: 100%; }
+.vbar-empty { width: 100%; height: 100%; background: rgba(148, 163, 184, 0.14); }
+
+.verdict-legend-row {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #94a3b8;
+}
+
+.vlegend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vlegend-item strong {
+  color: #f8fafc;
+}
+
+.vdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.vdot.apto { background: #10b981; }
+.vdot.obs { background: #f59e0b; }
+.vdot.no-apto { background: #ef4444; }
+
+/* Pie de Tarjeta */
+.psi-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.psi-footer-metric {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.psi-footer-metric span {
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.psi-footer-metric strong {
+  font-size: 14.5px;
+  color: #f8fafc;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.psi-footer-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Comparativa de Carga Laboral */
+.workload-comparison-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.workload-comp-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 180px;
+  align-items: center;
+  gap: 16px;
+}
+
+.workload-comp-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.workload-comp-track {
+  height: 12px;
+  background: #0f172a;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+}
+
+.workload-bar-active {
+  background: #a855f7;
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.workload-bar-closed {
+  background: #10b981;
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.workload-comp-totals {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.comp-tag-active { color: #c084fc; }
+.comp-tag-closed { color: #34d399; }
+
+@media (max-width: 1100px) {
+  .psychologist-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .workload-comp-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .workload-comp-totals {
+    justify-content: flex-start;
+  }
+}

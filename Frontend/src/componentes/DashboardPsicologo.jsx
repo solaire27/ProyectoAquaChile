@@ -56,6 +56,7 @@ const escaparHtml = (texto) => {
 
 const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [solicitudes, setSolicitudes] = useState([]);
+    const [metricasEquipo, setMetricasEquipo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refrescando, setRefrescando] = useState(false);
     const [analizandoIaId, setAnalizandoIaId] = useState(null);
@@ -107,6 +108,16 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         setToasts(prev => prev.filter(t => t.id !== id));
     };
 
+    const cargarMetricasEquipo = async () => {
+        if (!esAdmin) return;
+        try {
+            const resMetricas = await api.get('/metricas/psicologos');
+            setMetricasEquipo(resMetricas.data);
+        } catch (errMetricas) {
+            console.error('Error al cargar métricas del equipo:', errMetricas);
+        }
+    };
+
     const fetchSolicitudes = async (silencioso = false) => {
         if (!silencioso) setLoading(true);
         else setRefrescando(true);
@@ -120,6 +131,8 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                     return response.data.find(item => item.id === prev.id) || prev;
                 });
             }
+
+            await cargarMetricasEquipo();
         } catch (error) {
             console.error('Error al cargar solicitudes:', error);
             if (error.response?.status === 401 || error.response?.status === 403) {
@@ -339,6 +352,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 setSolicitudSeleccionada(prev =>
                     prev && prev.id.toString() === id.toString() ? solicitudActualizada : prev
                 );
+                await cargarMetricasEquipo();
             } else {
                 await fetchSolicitudes(true);
             }
@@ -614,6 +628,8 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 <div className="portal-content-area">
                     {vistaActiva === 'overview' && (
                         <MetricasPsicologo
+                            esAdmin={esAdmin}
+                            metricasEquipo={metricasEquipo}
                             solicitudes={listaSegura}
                             solicitudesFiltradas={solicitudesFiltradas}
                             columnas={columnas}
