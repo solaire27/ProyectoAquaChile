@@ -167,4 +167,13 @@ public class SolicitudService {
 
         return solicitud.getEstado().name();
     }
+    public List<SolicitudEvaluacion> buscarSolicitudesPublicas(String correo, String nombre) {
+        if (correo != null && !correo.isBlank()) {
+            return solicitudRepository.findByCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(correo.trim());
+        }
+        if (nombre != null && !nombre.isBlank()) {
+            return solicitudRepository.findByCandidatoNombreContainingIgnoreCaseOrderByFechaSolicitudDesc(nombre.trim());
+        }
+        return List.of();
+    }
 }

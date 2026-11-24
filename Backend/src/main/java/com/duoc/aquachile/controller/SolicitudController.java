@@ -80,9 +80,13 @@ public class SolicitudController {
 
         byte[] pdfBytes = supabaseStorageService.descargarCv(urlCv);
 
+        String soloNombreArchivo = urlCv.contains("/")
+                ? urlCv.substring(urlCv.lastIndexOf("/") + 1)
+                : urlCv;
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDisposition(ContentDisposition.inline().filename(urlCv).build());
+        headers.setContentDisposition(ContentDisposition.inline().filename(soloNombreArchivo).build());
 
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }

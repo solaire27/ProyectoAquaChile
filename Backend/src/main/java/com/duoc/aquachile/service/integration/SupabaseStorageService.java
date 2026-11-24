@@ -24,31 +24,62 @@ public class SupabaseStorageService {
         this.restTemplate = new RestTemplate();
     }
 
-    public String subirCv(MultipartFile archivo) {
+    private static final long MAX_CV_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+    public String subirCv(MultipartFile archivo, String nombrePostulante) {
+        validarArchivoPdf(archivo);
+
         try {
             String nombreOriginal = archivo.getOriginalFilename() != null ? archivo.getOriginalFilename() : "cv.pdf";
-            String nombreLimpio = Normalizer.normalize(nombreOriginal, Normalizer.Form.NFD)
-                    .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
-                    .replaceAll("[^a-zA-Z0-9._-]", "_");
+            String nombreLimpio = limpiarTexto(nombreOriginal);
 
-            String nombreUnico = UUID.randomUUID().toString() + "-" + nombreLimpio;
-            String endpoint = supabaseUrl + "/storage/v1/object/cv_candidatos/" + nombreUnico;
+            String basePostulante = (nombrePostulante != null && !nombrePostulante.isBlank())
+                    ? limpiarTexto(nombrePostulante).toLowerCase()
+                    : "postulante";
+
+            String idUnico = UUID.randomUUID().toString().substring(0, 8);
+            String rutaCarpeta = basePostulante + "_" + idUnico + "/" + nombreLimpio;
+
+            String endpoint = supabaseUrl + "/storage/v1/object/cv_candidatos/" + rutaCarpeta;
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(serviceRoleKey);
-            headers.setContentType(MediaType.valueOf(archivo.getContentType() != null ? archivo.getContentType() : "application/pdf"));
+            headers.setContentType(MediaType.APPLICATION_PDF);
 
             HttpEntity<byte[]> requestEntity = new HttpEntity<>(archivo.getBytes(), headers);
             ResponseEntity<String> response = restTemplate.exchange(endpoint, HttpMethod.POST, requestEntity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                return nombreUnico;
+                return rutaCarpeta;
             } else {
                 throw new RuntimeException("Error al subir archivo a Supabase: " + response.getStatusCode());
             }
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Excepción al subir el CV a Supabase: " + e.getMessage());
         }
+    }
+
+    private void validarArchivoPdf(MultipartFile archivo) {
+        if (archivo == null || archivo.isEmpty()) {
+            throw new IllegalArgumentException("El archivo CV está vacío.");
+        }
+        if (archivo.getSize() > MAX_CV_SIZE_BYTES) {
+            throw new IllegalArgumentException("El archivo CV supera el tamaño máximo permitido de 5 MB.");
+        }
+        String contentType = archivo.getContentType();
+        String nombre = archivo.getOriginalFilename() != null ? archivo.getOriginalFilename().toLowerCase() : "";
+        boolean esPdf = "application/pdf".equalsIgnoreCase(contentType) || nombre.endsWith(".pdf");
+        if (!esPdf) {
+            throw new IllegalArgumentException("Formato no permitido. Solo se aceptan archivos PDF.");
+        }
+    }
+
+    private String limpiarTexto(String texto) {
+        return Normalizer.normalize(texto.trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 
     public byte[] descargarCv(String nombreArchivo) {

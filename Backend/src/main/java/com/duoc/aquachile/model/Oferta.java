@@ -26,8 +26,26 @@ public class Oferta {
     @Column(nullable = false, length = 100)
     private String familiaCargo;
 
+    @Column(length = 150)
+    private String ubicacion;
+
+    @Column(length = 50)
+    private String modalidad; // Presencial, Híbrida o Remota
+
     @Column(columnDefinition = "TEXT")
     private String descripcion;
+
+    @Column(name = "funciones_principales", columnDefinition = "TEXT")
+    private String funcionesPrincipales;
+
+    @Column(columnDefinition = "TEXT")
+    private String requisitos;
+
+    @Column(columnDefinition = "TEXT")
+    private String beneficios;
+
+    @Column(name = "rango_salarial", length = 100)
+    private String rangoSalarial;
 
     // Se inicializa en true por defecto a nivel de BD y de Objeto
     @Column(nullable = false, columnDefinition = "boolean default true")

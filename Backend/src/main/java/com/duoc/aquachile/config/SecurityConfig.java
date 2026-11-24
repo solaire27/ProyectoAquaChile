@@ -34,7 +34,10 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/postulaciones/public/**",
                                 "/api/ofertas/public",
-                                "/api/solicitudes/estado"
+                                "/api/solicitudes/estado",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
                         ).permitAll()
                         // 2. El resto de la API requiere JWT obligatoriamente
                         .requestMatchers("/api/**").authenticated()
