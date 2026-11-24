@@ -1,0 +1,874 @@
+[
+  {
+    "cargo": "Operario de Planta",
+    "familia_cargo": "Operativo",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 0,
+      "habilidades": [
+        "trabajo en equipo",
+        "seguimiento de normas de inocuidad",
+        "puntualidad",
+        "resistencia física"
+      ]
+    },
+    "palabras_clave": [
+      "planta de proceso",
+      "HACCP",
+      "BPM",
+      "turnos rotativos",
+      "línea de producción",
+      "frigorífico"
+    ],
+    "puntos_negativos": [
+      "alta rotación sin justificación",
+      "sin disponibilidad para turnos",
+      "CV ilegible o sin datos de contacto"
+    ],
+    "prompt_base": "Evalúa el CV para Operario de Planta en AquaChile. Prioriza estabilidad laboral, experiencia en plantas de alimentos o procesos industriales y cumplimiento de normas de seguridad e inocuidad. Entrega puntaje 1-10 y 2 preguntas de entrevista.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 8/10. Criterios: Experiencia en planta de alimentos y manejo de BPM (+), sin mención explícita de disponibilidad para turnos nocturnos (-). Preguntas sugeridas: 1) ¿Tienes experiencia trabajando en turnos rotativos? 2) ¿Qué normas de inocuidad aplicabas en tu trabajo anterior? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "2 años como operario en planta procesadora de alimentos, manejo de BPM y HACCP, disponibilidad para turnos rotativos.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "planta de proceso",
+          "BPM",
+          "turnos rotativos"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "5 trabajos distintos en el último año de 1 mes cada uno, sin datos de contacto ni referencia a trabajo operativo.",
+        "puntaje_esperado_rango": [
+          1,
+          4
+        ],
+        "debe_detectar": [
+          "alta rotación sin justificación",
+          "CV ilegible o sin datos de contacto"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Asistente de Producción",
+    "familia_cargo": "Operativo",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 1,
+      "habilidades": [
+        "control de calidad",
+        "registro de datos",
+        "orden",
+        "trabajo bajo presión"
+      ]
+    },
+    "palabras_clave": [
+      "producción",
+      "rendimiento",
+      "planillas",
+      "trazabilidad",
+      "acuicultura",
+      "empaque"
+    ],
+    "puntos_negativos": [
+      "nula experiencia en entornos productivos",
+      "falta de detalle en funciones previas",
+      "CV desordenado"
+    ],
+    "prompt_base": "Evalúa el CV para Asistente de Producción en AquaChile. Valora experiencia apoyando líneas de proceso, control de registros y manejo básico de planillas. Entrega puntaje 1-10 y 2 preguntas de entrevista.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 8/10. Criterios: 2 años apoyando trazabilidad y registros de producción (+), no detalla nivel de Excel (-). Preguntas sugeridas: 1) ¿Cómo registrabas los rendimientos diarios en línea? 2) ¿Cómo actúas ante una desviación de calidad? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "2 años como asistente de línea en planta acuícola, registro de planillas de rendimiento y trazabilidad de empaque.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "producción",
+          "trazabilidad",
+          "planillas"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "Solo experiencia informal en ventas sin mención de procesos productivos ni descripción de tareas.",
+        "puntaje_esperado_rango": [
+          1,
+          4
+        ],
+        "debe_detectar": [
+          "nula experiencia en entornos productivos",
+          "falta de detalle en funciones previas"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Técnico de Mantenimiento",
+    "familia_cargo": "Operativo",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 2,
+      "habilidades": [
+        "mantenimiento preventivo",
+        "diagnóstico de fallas",
+        "seguridad industrial",
+        "resolución de problemas"
+      ]
+    },
+    "palabras_clave": [
+      "electromecánica",
+      "PLC",
+      "refrigeración industrial",
+      "mantención correctiva",
+      "calderas",
+      "SEC"
+    ],
+    "puntos_negativos": [
+      "sin formación técnica demostrable",
+      "sin mención de maquinaria o equipos",
+      "brechas laborales sin explicar"
+    ],
+    "prompt_base": "Evalúa el CV para Técnico de Mantenimiento en AquaChile. Verifica título técnico, experiencia en mantención preventiva/correctiva de maquinaria industrial y seguridad laboral. Entrega puntaje 1-10 y 2 preguntas técnicas.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 9/10. Criterios: Técnico Electromecánico con 3 años en refrigeración industrial y PLC (+), no indica certificación SEC (-). Preguntas sugeridas: 1) ¿Cuál ha sido la falla crítica más compleja que resolviste en línea? 2) ¿Cómo organizas un plan de mantención preventiva? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "Técnico Electromecánico, 4 años en mantención preventiva y correctiva de plantas de refrigeración industrial y PLC.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "electromecánica",
+          "PLC",
+          "refrigeración industrial"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "Sin estudios técnicos ni mención de equipos industriales, 3 años sin actividad laboral registrada.",
+        "puntaje_esperado_rango": [
+          1,
+          4
+        ],
+        "debe_detectar": [
+          "sin formación técnica demostrable",
+          "sin mención de maquinaria o equipos"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Operario de Grúa",
+    "familia_cargo": "Operativo",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 1,
+      "habilidades": [
+        "conducción segura",
+        "precisión",
+        "control de inventario",
+        "responsabilidad"
+      ]
+    },
+    "palabras_clave": [
+      "licencia clase D",
+      "grúa horquilla",
+      "apilador eléctrico",
+      "bodega",
+      "frigorífico",
+      "despacho"
+    ],
+    "puntos_negativos": [
+      "no menciona licencia clase D vigente",
+      "sin experiencia comprobable en bodega",
+      "CV sin fechas laborales"
+    ],
+    "prompt_base": "Evalúa el CV para Operario de Grúa en AquaChile. Verifica obligatoriamente licencia Clase D y experiencia en operación segura en bodegas o cámaras de frío. Entrega puntaje 1-10 y 2 preguntas de entrevista.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 8/10. Criterios: Cuenta con licencia Clase D vigente y 2 años en bodega frigorífica (+), no menciona manejo de apilador eléctrico (-). Preguntas sugeridas: 1) ¿Qué chequeos realizas a la grúa antes de iniciar turno? 2) ¿Tienes experiencia operando en cámaras de frío? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "Operador de grúa horquilla con licencia clase D al día, 3 años en despacho y cámaras frigoríficas.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "licencia clase D",
+          "grúa horquilla",
+          "frigorífico"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "Conductor particular con licencia clase B, sin mención de licencia D ni experiencia en bodega.",
+        "puntaje_esperado_rango": [
+          1,
+          3
+        ],
+        "debe_detectar": [
+          "no menciona licencia clase D vigente",
+          "sin experiencia comprobable en bodega"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Asistente Administrativo",
+    "familia_cargo": "Administrativo",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 1,
+      "habilidades": [
+        "organización",
+        "gestión documental",
+        "comunicación efectiva",
+        "manejo de Office"
+      ]
+    },
+    "palabras_clave": [
+      "Excel",
+      "facturación",
+      "ERP",
+      "SAP",
+      "archivo",
+      "atención a proveedores"
+    ],
+    "puntos_negativos": [
+      "errores ortográficos en el CV",
+      "sin manejo de herramientas ofimáticas",
+      "formato descuidado"
+    ],
+    "prompt_base": "Evalúa el CV para Asistente Administrativo en AquaChile. Prioriza prolijidad, manejo de Excel/ERP y experiencia en soporte administrativo y documental. Entrega puntaje 1-10 y 2 preguntas de entrevista.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 8/10. Criterios: Experiencia en facturación, proveedores y Excel intermedio (+), sin experiencia previa en SAP (-). Preguntas sugeridas: 1) ¿Cómo priorizas tareas cuando coinciden cierres de facturación? 2) ¿Qué funciones de Excel utilizas con mayor frecuencia? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "Técnico en Administración, 2 años en gestión documental, facturación, trato con proveedores y manejo de Excel y SAP.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "Excel",
+          "facturación",
+          "SAP"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "CV con múltiples faltas de ortografía, sin mención de Office ni experiencia administrativa.",
+        "puntaje_esperado_rango": [
+          1,
+          4
+        ],
+        "debe_detectar": [
+          "errores ortográficos en el CV",
+          "sin manejo de herramientas ofimáticas"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Analista Contable",
+    "familia_cargo": "Administrativo",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 2,
+      "habilidades": [
+        "análisis numérico",
+        "rigurosidad",
+        "normativa tributaria",
+        "conciliación bancaria"
+      ]
+    },
+    "palabras_clave": [
+      "IFRS",
+      "SII",
+      "balances",
+      "impuestos",
+      "SAP",
+      "Softland",
+      "auditoría"
+    ],
+    "puntos_negativos": [
+      "sin título de Contador o afín",
+      "sin mención de sistemas contables",
+      "experiencia solo informal"
+    ],
+    "prompt_base": "Evalúa el CV para Analista Contable en AquaChile. Valora dominio de normativa tributaria chilena, IFRS, cierres contables y uso de ERP. Entrega puntaje 1-10 y 2 preguntas técnicas.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 9/10. Criterios: Contador Auditor con 3 años en cierres bajo IFRS, declaraciones SII y Softland (+), sin experiencia en SAP (-). Preguntas sugeridas: 1) ¿Cómo abordas diferencias en conciliaciones bancarias al cierre? 2) ¿Qué experiencia tienes con auditorías externas? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "Contador Auditor, 4 años en análisis de cuentas, balances IFRS, declaraciones mensuales SII y manejo de SAP.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "IFRS",
+          "SII",
+          "SAP"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "Sin estudios contables, solo ayudó informalmente en un negocio familiar sin usar software contable.",
+        "puntaje_esperado_rango": [
+          1,
+          3
+        ],
+        "debe_detectar": [
+          "sin título de Contador o afín",
+          "sin mención de sistemas contables"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Recepcionista",
+    "familia_cargo": "Administrativo",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 1,
+      "habilidades": [
+        "atención al cliente",
+        "cordialidad",
+        "multitarea",
+        "comunicación verbal y escrita"
+      ]
+    },
+    "palabras_clave": [
+      "recepción",
+      "central telefónica",
+      "control de acceso",
+      "correspondencia",
+      "agenda",
+      "Office"
+    ],
+    "puntos_negativos": [
+      "mala redacción u ortografía",
+      "sin experiencia en atención de público",
+      "CV incompleto"
+    ],
+    "prompt_base": "Evalúa el CV para Recepcionista en AquaChile. Enfócate en habilidades comunicacionales, experiencia en atención de visitas/proveedores y organización. Entrega puntaje 1-10 y 2 preguntas situacionales.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 8/10. Criterios: 2 años en recepción corporativa, control de acceso y manejo de agenda (+), no menciona manejo de central telefónica (-). Preguntas sugeridas: 1) ¿Cómo manejas a una visita molesta en recepción? 2) ¿Cómo organizas correspondencia y llamadas simultáneas? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "2 años como recepcionista en oficina corporativa, control de acceso, central telefónica, correspondencia y Office.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "recepción",
+          "control de acceso",
+          "central telefónica"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "CV incompleto con errores de redacción y sin experiencia previa tratando con público.",
+        "puntaje_esperado_rango": [
+          1,
+          4
+        ],
+        "debe_detectar": [
+          "mala redacción u ortografía",
+          "sin experiencia en atención de público"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Ejecutivo de RRHH",
+    "familia_cargo": "Administrativo",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 2,
+      "habilidades": [
+        "empatía",
+        "legislación laboral",
+        "gestión de personas",
+        "confidencialidad"
+      ]
+    },
+    "palabras_clave": [
+      "remuneraciones",
+      "contratos",
+      "finiquitos",
+      "reclutamiento",
+      "Buk",
+      "Dirección del Trabajo"
+    ],
+    "puntos_negativos": [
+      "desconocimiento de normativa laboral chilena",
+      "sin experiencia en procesos de RRHH",
+      "falta de logros concretos"
+    ],
+    "prompt_base": "Evalúa el CV para Ejecutivo de RRHH en AquaChile. Evalúa experiencia en ciclo laboral (contratos, asistencia, remuneraciones o selección) y manejo de software de RRHH. Entrega puntaje 1-10 y 2 preguntas de entrevista.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 8/10. Criterios: 3 años en contratos, finiquitos y plataforma Buk (+), poca experiencia en reclutamiento masivo (-). Preguntas sugeridas: 1) ¿Cómo aseguras el cumplimiento de plazos ante la Dirección del Trabajo? 2) ¿Cómo gestionas consultas sensibles de colaboradores? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "Ingeniero en RRHH, 3 años gestionando contratos, finiquitos, remuneraciones en Buk y trámites en Dirección del Trabajo.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "remuneraciones",
+          "Buk",
+          "Dirección del Trabajo"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "Experiencia solo en áreas comerciales, sin formación ni experiencia en procesos de recursos humanos.",
+        "puntaje_esperado_rango": [
+          1,
+          4
+        ],
+        "debe_detectar": [
+          "sin experiencia en procesos de RRHH",
+          "desconocimiento de normativa laboral chilena"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Jefe de Turno",
+    "familia_cargo": "Jefatura",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 3,
+      "habilidades": [
+        "liderazgo operativo",
+        "toma de decisiones",
+        "gestión de KPIs",
+        "manejo de conflictos"
+      ]
+    },
+    "palabras_clave": [
+      "supervisión de personal",
+      "turnos",
+      "productividad",
+      "seguridad",
+      "planta",
+      "metas diarias"
+    ],
+    "puntos_negativos": [
+      "sin experiencia liderando equipos",
+      "sin indicadores de gestión",
+      "alta rotación en jefaturas"
+    ],
+    "prompt_base": "Evalúa el CV para Jefe de Turno en AquaChile. Prioriza liderazgo de equipos numerosos en planta, cumplimiento de metas de producción y control de seguridad. Entrega puntaje 1-10 y 2 preguntas conductuales.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 8/10. Criterios: 4 años liderando turnos de 40 personas con foco en productividad y seguridad (+), no especifica KPIs alcanzados (-). Preguntas sugeridas: 1) Cuéntame cómo resolviste un conflicto crítico durante un turno. 2) ¿Cómo aseguras las metas diarias sin comprometer la seguridad? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "4 años como Jefe de Turno en planta industrial supervisando 50 operarios, cumplimiento de metas diarias y reducción de accidentabilidad.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "supervisión de personal",
+          "turnos",
+          "metas diarias"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "1 año como operario sin gente a cargo ni mención de indicadores de productividad.",
+        "puntaje_esperado_rango": [
+          1,
+          4
+        ],
+        "debe_detectar": [
+          "sin experiencia liderando equipos",
+          "sin indicadores de gestión"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Jefe de Planta",
+    "familia_cargo": "Jefatura",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 4,
+      "habilidades": [
+        "liderazgo",
+        "orden",
+        "comunicación",
+        "gestión presupuestaria"
+      ]
+    },
+    "palabras_clave": [
+      "liderazgo",
+      "pesquera",
+      "acuicultura",
+      "equipo",
+      "eficiencia operacional",
+      "certificaciones de calidad"
+    ],
+    "puntos_negativos": [
+      "CV sin formato",
+      "sin mención de proyectos previos",
+      "sin experiencia en plantas de proceso"
+    ],
+    "prompt_base": "Evalúa el CV para Jefe de Planta en AquaChile. Valora trayectoria en industria salmonera o alimentaria, liderazgo integral de planta y proyectos de mejora continua. Entrega puntaje 1-10 y 2 preguntas estratégicas.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 9/10. Criterios: 5 años liderando planta salmonera con proyectos de eficiencia operacional (+), no detalla monto presupuestario administrado (-). Preguntas sugeridas: 1) ¿Qué proyecto de mejora continua generó mayor impacto en tu última planta? 2) ¿Cómo equilibras costos operacionales y certificaciones de calidad? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "Ingeniero en Alimentos, 6 años como Jefe de Planta en industria salmonera/pesquera, liderazgo de 120 personas y proyectos de eficiencia operacional.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "liderazgo",
+          "acuicultura",
+          "eficiencia operacional"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "Texto plano sin formato, recién egresado sin experiencia en plantas de proceso ni proyectos previos.",
+        "puntaje_esperado_rango": [
+          1,
+          3
+        ],
+        "debe_detectar": [
+          "CV sin formato",
+          "sin mención de proyectos previos"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Supervisor de Área",
+    "familia_cargo": "Jefatura",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 2,
+      "habilidades": [
+        "supervisión",
+        "comunicación asertiva",
+        "control de procesos",
+        "mejora continua"
+      ]
+    },
+    "palabras_clave": [
+      "supervisión",
+      "calidad",
+      "inocuidad",
+      "indicadores",
+      "capacitación",
+      "cumplimiento"
+    ],
+    "puntos_negativos": [
+      "sin experiencia coordinando personas",
+      "descripciones genéricas sin resultados",
+      "sin manejo de reportes"
+    ],
+    "prompt_base": "Evalúa el CV para Supervisor de Área en AquaChile. Revisa capacidad de coordinar equipos operativos, asegurar estándares de calidad y reportar desvíos. Entrega puntaje 1-10 y 2 preguntas de entrevista.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 8/10. Criterios: 3 años supervisando calidad e inocuidad en área de empaque (+), falta detalle sobre capacitación a equipos nuevos (-). Preguntas sugeridas: 1) ¿Cómo detectas y reportas un desvío de proceso a tiempo? 2) ¿Cómo das feedback a un colaborador con bajo desempeño? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "3 años como Supervisor de Área de calidad e inocuidad, control de indicadores diarios y capacitación de personal operativo.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "supervisión",
+          "inocuidad",
+          "indicadores"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "Descripciones vagas de trabajos individuales sin experiencia coordinando equipos ni reportes.",
+        "puntaje_esperado_rango": [
+          1,
+          4
+        ],
+        "debe_detectar": [
+          "sin experiencia coordinando personas",
+          "descripciones genéricas sin resultados"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Jefe de Logística",
+    "familia_cargo": "Jefatura",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 3,
+      "habilidades": [
+        "planificación",
+        "negociación",
+        "gestión de cadena de frío",
+        "liderazgo"
+      ]
+    },
+    "palabras_clave": [
+      "cadena de suministro",
+      "cadena de frío",
+      "WMS",
+      "exportación",
+      "transporte",
+      "inventarios"
+    ],
+    "puntos_negativos": [
+      "sin experiencia en logística o bodegaje",
+      "sin mención de control de stock o despachos",
+      "sin experiencia liderando equipos"
+    ],
+    "prompt_base": "Evalúa el CV para Jefe de Logística en AquaChile. Prioriza experiencia en cadena de frío, despachos de exportación/nacionales y control de inventarios. Entrega puntaje 1-10 y 2 preguntas técnicas.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 9/10. Criterios: 4 años liderando logística con cadena de frío, WMS y despachos de exportación (+), no menciona negociación con navieras (-). Preguntas sugeridas: 1) ¿Cómo aseguras la continuidad de la cadena de frío ante retrasos de transporte? 2) ¿Qué KPIs de inventario consideras críticos? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "Ingeniero en Logística, 5 años liderando cadena de frío, exportación de alimentos, control de inventarios y sistema WMS.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "cadena de frío",
+          "WMS",
+          "exportación"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "Experiencia exclusivamente en soporte administrativo sin relación con bodegas, inventarios ni transporte.",
+        "puntaje_esperado_rango": [
+          1,
+          3
+        ],
+        "debe_detectar": [
+          "sin experiencia en logística o bodegaje",
+          "sin experiencia liderando equipos"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Gerente de Operaciones",
+    "familia_cargo": "Gerencia",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 6,
+      "habilidades": [
+        "visión estratégica",
+        "liderazgo ejecutivo",
+        "optimización de costos",
+        "gestión del cambio"
+      ]
+    },
+    "palabras_clave": [
+      "operaciones",
+      "acuicultura",
+      "P&L",
+      "Lean Manufacturing",
+      "EBITDA",
+      "sustentabilidad"
+    ],
+    "puntos_negativos": [
+      "sin logros cuantificables",
+      "sin experiencia en dirección de múltiples áreas",
+      "CV excesivamente operativo sin foco estratégico"
+    ],
+    "prompt_base": "Evalúa el CV para Gerente de Operaciones en AquaChile. Busca resultados cuantificables en eficiencia, liderazgo de grandes dotaciones y experiencia en industria acuícola o manufactura. Entrega puntaje 1-10 y 2 preguntas ejecutivas.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 9/10. Criterios: 8 años en dirección de operaciones acuícolas con reducción de costos de 12% y dominio de Lean (+), poca mención de proyectos de sustentabilidad (-). Preguntas sugeridas: 1) ¿Cómo has liderado transformaciones operacionales de alto impacto en el EBITDA? 2) ¿Cómo alineas producción y sustentabilidad a largo plazo? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "Ingeniero Civil Industrial, 9 años dirigiendo operaciones en acuicultura, gestión de P&L, Lean Manufacturing y mejora de EBITDA en 15%.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "acuicultura",
+          "P&L",
+          "EBITDA"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "2 años en tareas operativas diarias sin métricas cuantificables ni dirección de áreas.",
+        "puntaje_esperado_rango": [
+          1,
+          3
+        ],
+        "debe_detectar": [
+          "sin logros cuantificables",
+          "CV excesivamente operativo sin foco estratégico"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Gerente Comercial",
+    "familia_cargo": "Gerencia",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 6,
+      "habilidades": [
+        "negociación internacional",
+        "estrategia comercial",
+        "liderazgo de ventas",
+        "orientación a resultados"
+      ]
+    },
+    "palabras_clave": [
+      "exportación",
+      "mercados internacionales",
+      "B2B",
+      "rentabilidad",
+      "cartera de clientes",
+      "inglés avanzado"
+    ],
+    "puntos_negativos": [
+      "sin métricas de crecimiento o ventas",
+      "sin experiencia en mercados internacionales",
+      "sin manejo de inglés"
+    ],
+    "prompt_base": "Evalúa el CV para Gerente Comercial en AquaChile. Prioriza expansión de mercados, negociación B2B/exportación, dominio de inglés y cumplimiento de metas comerciales. Entrega puntaje 1-10 y 2 preguntas ejecutivas.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 9/10. Criterios: 7 años en exportación B2B a EE.UU. y Asia con crecimiento de 20% e inglés avanzado (+), sin experiencia específica en industria de alimentos (-). Preguntas sugeridas: 1) ¿Cómo estructuraste la entrada a un nuevo mercado internacional? 2) ¿Cómo proteges la rentabilidad ante volatilidad de precios? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "Ingeniero Comercial, 8 años liderando exportaciones B2B en mercados internacionales, inglés C1 y crecimiento sostenido de cartera en 25%.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "exportación",
+          "mercados internacionales",
+          "inglés avanzado"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "Vendedor de retail local sin métricas de ventas, sin inglés ni experiencia en exportación.",
+        "puntaje_esperado_rango": [
+          1,
+          3
+        ],
+        "debe_detectar": [
+          "sin métricas de crecimiento o ventas",
+          "sin manejo de inglés"
+        ]
+      }
+    ]
+  },
+  {
+    "cargo": "Gerente de Finanzas",
+    "familia_cargo": "Gerencia",
+    "modelo_ia_objetivo": "gemini-3.8-flash",
+    "requisitos": {
+      "anios_experiencia_minimos": 6,
+      "habilidades": [
+        "planificación financiera",
+        "gestión de riesgos",
+        "gobierno corporativo",
+        "liderazgo"
+      ]
+    },
+    "palabras_clave": [
+      "finanzas corporativas",
+      "flujo de caja",
+      "presupuesto",
+      "auditoría",
+      "banca",
+      "IFRS",
+      "control de gestión"
+    ],
+    "puntos_negativos": [
+      "sin formación financiera o MBA/afín",
+      "sin experiencia en gestión presupuestaria de gran escala",
+      "falta de resultados financieros verificables"
+    ],
+    "prompt_base": "Evalúa el CV para Gerente de Finanzas en AquaChile. Valora dirección financiera, relación con bancos, control presupuestario y gestión de riesgos en empresas productivas. Entrega puntaje 1-10 y 2 preguntas ejecutivas.",
+    "respuesta_guia_esperada": {
+      "ejemplo_salida": "Puntaje orientativo: 9/10. Criterios: MBA con 8 años en finanzas corporativas, relación con banca y control presupuestario IFRS (+), no detalla experiencia en cobertura cambiaria (-). Preguntas sugeridas: 1) ¿Cómo gestionas liquidez y flujo de caja en ciclos productivos largos? 2) ¿Cómo mitigaste un riesgo financiero relevante en tu gestión? Nota: Apoyo orientativo sujeto a revisión humana obligatoria."
+    },
+    "golden_set": [
+      {
+        "caso": "Candidato ideal",
+        "resumen_cv_ficticio": "Ingeniero Comercial con MBA, 9 años en finanzas corporativas, negociación con banca, control de gestión, flujo de caja y normativa IFRS.",
+        "puntaje_esperado_rango": [
+          8,
+          10
+        ],
+        "debe_detectar": [
+          "finanzas corporativas",
+          "banca",
+          "IFRS"
+        ]
+      },
+      {
+        "caso": "Candidato insuficiente",
+        "resumen_cv_ficticio": "Asistente administrativo sin formación financiera ni experiencia manejando presupuestos o relación bancaria.",
+        "puntaje_esperado_rango": [
+          1,
+          3
+        ],
+        "debe_detectar": [
+          "sin formación financiera o MBA/afín",
+          "sin experiencia en gestión presupuestaria de gran escala"
+        ]
+      }
+    ]
+  }
+]
