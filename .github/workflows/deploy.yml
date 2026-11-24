@@ -8,8 +8,7 @@ on:
       - 'test/**' 
       - 'fix/**'  
       - 'mod/**'  
-    paths:
-      - 'Backend/**' 
+
 
 jobs:
   build-and-push:
@@ -27,6 +26,6 @@ jobs:
       - name: Construir y subir imagen Docker
         uses: docker/build-push-action@v4
         with:
-          context: ./Backend
+          context: .
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/aquachile-backend:latest
