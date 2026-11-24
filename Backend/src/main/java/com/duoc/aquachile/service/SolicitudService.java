@@ -3,6 +3,7 @@ package com.duoc.aquachile.service;
 import com.duoc.aquachile.dto.CandidatoRequestDTO;
 import com.duoc.aquachile.dto.SolicitudEstadoUpdateDTO;
 import com.duoc.aquachile.dto.SolicitudRequestDTO;
+import com.duoc.aquachile.exception.ConflictException;
 import com.duoc.aquachile.exception.ResourceNotFoundException;
 import com.duoc.aquachile.model.Candidato;
 import com.duoc.aquachile.model.EstadoSolicitud;
@@ -14,6 +15,7 @@ import com.duoc.aquachile.service.integration.AiService;
 import jakarta.validation.Valid;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -37,11 +39,18 @@ public class SolicitudService {
         this.aiService = aiService;
     }
 
+    @Transactional
     public SolicitudEvaluacion crearSolicitud(@Valid CandidatoRequestDTO dto) {
         Candidato candidato = candidatoService.crearCandidato(dto, dto.getUrlCv());
+        String cargoLimpio = dto.getCargoPostulacion() != null ? dto.getCargoPostulacion().trim() : "";
+
+        if (solicitudRepository.existsByCandidatoIdAndCargoIgnoreCase(candidato.getId(), cargoLimpio)) {
+            throw new ConflictException("Ya tienes una postulación registrada para el cargo de " + cargoLimpio + ".");
+        }
+
         SolicitudEvaluacion solicitud = new SolicitudEvaluacion();
         solicitud.setCandidato(candidato);
-        solicitud.setCargo(dto.getCargoPostulacion());
+        solicitud.setCargo(cargoLimpio);
         solicitud.setFamiliaCargo(dto.getFamiliaCargo());
         solicitud.setObservaciones("Postulación ingresada automáticamente desde el portal público");
         solicitud.setEstado(EstadoSolicitud.NUEVA_POSTULACION);
@@ -49,11 +58,18 @@ public class SolicitudService {
         return solicitudRepository.save(solicitud);
     }
 
+    @Transactional
     public SolicitudEvaluacion crearSolicitud(@Valid SolicitudRequestDTO dto) {
         Candidato candidato = candidatoService.obtenerPorId(dto.getCandidatoId());
+        String cargoLimpio = dto.getCargo() != null ? dto.getCargo().trim() : "";
+
+        if (solicitudRepository.existsByCandidatoIdAndCargoIgnoreCase(candidato.getId(), cargoLimpio)) {
+            throw new ConflictException("El candidato ya tiene una postulación registrada para el cargo de " + cargoLimpio + ".");
+        }
+
         SolicitudEvaluacion solicitud = new SolicitudEvaluacion();
         solicitud.setCandidato(candidato);
-        solicitud.setCargo(dto.getCargo());
+        solicitud.setCargo(cargoLimpio);
         solicitud.setFamiliaCargo(dto.getFamiliaCargo());
         solicitud.setObservaciones(dto.getObservaciones());
         solicitud.setEstado(EstadoSolicitud.PENDIENTE);
@@ -167,6 +183,7 @@ public class SolicitudService {
 
         return solicitud.getEstado().name();
     }
+
     public List<SolicitudEvaluacion> buscarSolicitudesPublicas(String correo, String nombre) {
         if (correo != null && !correo.isBlank()) {
             return solicitudRepository.findByCandidatoCorreoIgnoreCaseOrderByFechaSolicitudDesc(correo.trim());
