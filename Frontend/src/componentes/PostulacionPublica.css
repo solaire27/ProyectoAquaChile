@@ -363,3 +363,182 @@
   background-color: #ffffff;
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
+
+/* =========================================================
+   TOAST FLOTANTE (ESQUINA SUPERIOR DERECHA) Y MODAL DE ÉXITO
+   ========================================================= */
+@keyframes postToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.postulacion-floating-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 1500;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13.5px;
+  font-weight: 500;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.28);
+  border-left: 5px solid #ef4444;
+  animation: postToastIn 0.25s ease-out;
+}
+
+.floating-toast-icon {
+  color: #ef4444;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.floating-toast-close {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  font-size: 18px;
+  padding: 2px;
+  margin-left: auto;
+}
+
+.floating-toast-close:hover {
+  color: #0f172a;
+}
+
+/* Modal centrado de confirmación */
+.postulacion-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1600;
+  padding: 20px;
+}
+
+.postulacion-success-modal {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 34px 28px 28px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+  animation: postToastIn 0.25s ease-out;
+}
+
+.postulacion-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  border: none;
+  background: #f1f5f9;
+  color: #475569;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+.postulacion-modal-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.success-modal-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  font-size: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.postulacion-success-modal h3 {
+  margin: 0 0 8px 0;
+  font-size: 21px;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.success-modal-text {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.success-cargo-chip {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 22px;
+}
+
+.success-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-modal-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #0284c7;
+  color: #ffffff;
+  text-decoration: none;
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.btn-modal-primary:hover {
+  background: #0369a1;
+}
+
+.btn-modal-secondary {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-modal-secondary:hover {
+  background: #f8fafc;
+}

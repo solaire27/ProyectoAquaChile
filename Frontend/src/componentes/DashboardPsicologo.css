@@ -2216,3 +2216,67 @@
     justify-content: flex-start;
   }
 }
+
+/* =========================================================
+   NOTA REVISIÓN HUMANA IA + AGENDAMIENTO DE ENTREVISTAS
+   ========================================================= */
+.ia-human-review-notice {
+  margin-top: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fde68a;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ia-human-review-notice svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #fbbf24;
+  font-size: 15px;
+}
+
+.calendar-action-btn {
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #7dd3fc;
+}
+
+.calendar-action-btn:hover {
+  background: rgba(56, 189, 248, 0.14);
+}
+
+.calendar-ready-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  font-size: 13px;
+  color: #d1fae5;
+}
+
+.btn-google-calendar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #10b981;
+  color: #0f172a;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.btn-google-calendar:hover {
+  background: #34d399;
+}

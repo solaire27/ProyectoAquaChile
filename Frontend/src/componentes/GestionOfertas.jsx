@@ -1,17 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import {
     FiBriefcase, FiPlus, FiEdit2, FiTrash2, FiX,
-    FiToggleLeft, FiToggleRight, FiAlertCircle, FiCheckCircle
+    FiToggleLeft, FiToggleRight, FiAlertCircle, FiCheckCircle,
+    FiMapPin
 } from 'react-icons/fi';
 import api from '../services/api';
 
 const FAMILIAS = ['Operativo', 'Administrativo', 'Jefatura', 'Gerencia', 'TI'];
+const MODALIDADES = ['Presencial', 'Híbrida', 'Remota'];
 
 const estadoInicialForm = {
     tituloCargo: '',
     familiaCargo: 'Operativo',
     descripcion: '',
-    cuposDisponibles: 1
+    cuposDisponibles: 1,
+    ubicacion: '',
+    modalidad: 'Presencial',
+    funcionesPrincipales: '',
+    requisitos: '',
+    beneficios: '',
+    rangoSalarial: ''
 };
 
 const GestionOfertas = () => {
@@ -55,7 +63,13 @@ const GestionOfertas = () => {
             tituloCargo: oferta.tituloCargo || '',
             familiaCargo: oferta.familiaCargo || 'Operativo',
             descripcion: oferta.descripcion || '',
-            cuposDisponibles: oferta.cuposDisponibles || 1
+            cuposDisponibles: oferta.cuposDisponibles || 1,
+            ubicacion: oferta.ubicacion || '',
+            modalidad: oferta.modalidad || 'Presencial',
+            funcionesPrincipales: oferta.funcionesPrincipales || '',
+            requisitos: oferta.requisitos || '',
+            beneficios: oferta.beneficios || '',
+            rangoSalarial: oferta.rangoSalarial || ''
         });
         setMensaje({ tipo: '', texto: '' });
         setModalOpen(true);
@@ -68,6 +82,9 @@ const GestionOfertas = () => {
 
         const payload = {
             ...form,
+            tituloCargo: form.tituloCargo.trim(),
+            ubicacion: form.ubicacion.trim(),
+            rangoSalarial: form.rangoSalarial.trim(),
             cuposDisponibles: parseInt(form.cuposDisponibles, 10) || 1
         };
 
@@ -155,6 +172,7 @@ const GestionOfertas = () => {
                                 <tr>
                                     <th>Cargo</th>
                                     <th>Área / Familia</th>
+                                    <th>Ubicación / Modalidad</th>
                                     <th>Cupos</th>
                                     <th>Estado</th>
                                     <th>Publicación</th>
@@ -167,8 +185,9 @@ const GestionOfertas = () => {
                                         <td>
                                             <div className="candidate-strong">{oferta.tituloCargo}</div>
                                             <div className="candidate-sub">
-                                                {oferta.descripcion?.length > 70
-                                                    ? `${oferta.descripcion.substring(0, 70)}...`
+                                                {oferta.rangoSalarial ? `💰 ${oferta.rangoSalarial} · ` : ''}
+                                                {oferta.descripcion?.length > 60
+                                                    ? `${oferta.descripcion.substring(0, 60)}...`
                                                     : oferta.descripcion}
                                             </div>
                                         </td>
@@ -176,6 +195,12 @@ const GestionOfertas = () => {
                                             <span className="trello-label-pill small" style={{ backgroundColor: '#0284c7', color: '#e0f2fe' }}>
                                                 {oferta.familiaCargo}
                                             </span>
+                                        </td>
+                                        <td>
+                                            <div className="candidate-strong" style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <FiMapPin /> {oferta.ubicacion || 'Puerto Montt'}
+                                            </div>
+                                            <div className="candidate-sub">{oferta.modalidad || 'Presencial'}</div>
                                         </td>
                                         <td><strong>{oferta.cuposDisponibles}</strong></td>
                                         <td>
@@ -216,13 +241,17 @@ const GestionOfertas = () => {
 
             {modalOpen && (
                 <div className="modal-overlay" onClick={() => setModalOpen(false)}>
-                    <div className="modern-create-modal" onClick={(e) => e.stopPropagation()}>
+                    <div
+                        className="modern-create-modal"
+                        style={{ maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="create-modal-header">
                             <div className="create-header-title">
                                 <div className="create-icon-badge"><FiBriefcase /></div>
                                 <div>
                                     <h3>{editandoId ? 'Editar Oferta Laboral' : 'Nueva Oferta Laboral'}</h3>
-                                    <p>Completa los detalles de la vacante para el portal.</p>
+                                    <p>Completa todos los detalles de la vacante para el portal público.</p>
                                 </div>
                             </div>
                             <button className="trello-modal-close" onClick={() => setModalOpen(false)}>
@@ -266,15 +295,79 @@ const GestionOfertas = () => {
                                 </div>
                             </div>
 
+                            <div className="create-form-grid-2">
+                                <div className="create-field">
+                                    <label>Ubicación</label>
+                                    <input
+                                        type="text"
+                                        value={form.ubicacion}
+                                        onChange={(e) => setForm({ ...form, ubicacion: e.target.value })}
+                                        placeholder="Ej: Puerto Montt, Región de Los Lagos"
+                                    />
+                                </div>
+                                <div className="create-field">
+                                    <label>Modalidad</label>
+                                    <select
+                                        value={form.modalidad}
+                                        onChange={(e) => setForm({ ...form, modalidad: e.target.value })}
+                                    >
+                                        {MODALIDADES.map(mod => (
+                                            <option key={mod} value={mod}>{mod}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
                             <div className="create-field">
-                                <label>Descripción y Requisitos <span>*</span></label>
+                                <label>Rango Salarial (Opcional)</label>
+                                <input
+                                    type="text"
+                                    value={form.rangoSalarial}
+                                    onChange={(e) => setForm({ ...form, rangoSalarial: e.target.value })}
+                                    placeholder="Ej: $750.000 - $900.000 líquido / Acorde al mercado"
+                                />
+                            </div>
+
+                            <div className="create-field">
+                                <label>Descripción General <span>*</span></label>
                                 <textarea
-                                    rows="4"
+                                    rows="3"
                                     value={form.descripcion}
                                     onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-                                    placeholder="Describe funciones principales, turnos y requisitos del cargo..."
+                                    placeholder="Resumen del rol y propósito del cargo dentro de AquaChile..."
                                     required
                                 />
+                            </div>
+
+                            <div className="create-field">
+                                <label>Funciones Principales</label>
+                                <textarea
+                                    rows="3"
+                                    value={form.funcionesPrincipales}
+                                    onChange={(e) => setForm({ ...form, funcionesPrincipales: e.target.value })}
+                                    placeholder="Detalla las responsabilidades diarias del puesto..."
+                                />
+                            </div>
+
+                            <div className="create-form-grid-2">
+                                <div className="create-field">
+                                    <label>Requisitos</label>
+                                    <textarea
+                                        rows="3"
+                                        value={form.requisitos}
+                                        onChange={(e) => setForm({ ...form, requisitos: e.target.value })}
+                                        placeholder="Formación, experiencia mínima, licencias o certificaciones..."
+                                    />
+                                </div>
+                                <div className="create-field">
+                                    <label>Beneficios</label>
+                                    <textarea
+                                        rows="3"
+                                        value={form.beneficios}
+                                        onChange={(e) => setForm({ ...form, beneficios: e.target.value })}
+                                        placeholder="Buses de acercamiento, casino, seguro complementario, bonos..."
+                                    />
+                                </div>
                             </div>
 
                             <div className="create-modal-footer">

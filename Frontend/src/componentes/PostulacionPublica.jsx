@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FiArrowLeft, FiUploadCloud, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import {
+    FiArrowLeft, FiUploadCloud, FiAlertCircle,
+    FiCheckCircle, FiX, FiSearch
+} from 'react-icons/fi';
 import api from '../services/api';
 import './PostulacionPublica.css';
+
+const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 const opcionesCargosRespaldo = {
     Operativo: ['Operario de Planta', 'Asistente de Producción', 'Técnico de Mantenimiento', 'Operario de Grúa'],
@@ -28,6 +33,8 @@ const PostulacionPublica = () => {
 
     const [cvFile, setCvFile] = useState(null);
     const [estado, setEstado] = useState({ loading: false, mensaje: '', error: false });
+    const [modalExitoOpen, setModalExitoOpen] = useState(false);
+    const [cargoPostuladoExito, setCargoPostuladoExito] = useState('');
     const [erroresCampos, setErroresCampos] = useState({});
 
     useEffect(() => {
@@ -80,6 +87,15 @@ const PostulacionPublica = () => {
         inicializarCargos();
     }, [searchParams]);
 
+    // Auto-cerrar toast de error después de 5 segundos
+    useEffect(() => {
+        if (!estado.error || !estado.mensaje) return;
+        const timer = setTimeout(() => {
+            setEstado(prev => ({ ...prev, mensaje: '', error: false }));
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [estado.error, estado.mensaje]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setErroresCampos(prev => ({ ...prev, [name]: null }));
@@ -97,7 +113,37 @@ const PostulacionPublica = () => {
     };
 
     const handleFileChange = (e) => {
-        setCvFile(e.target.files[0]);
+        const archivo = e.target.files[0];
+        if (!archivo) {
+            setCvFile(null);
+            return;
+        }
+
+        const esPdf =
+            archivo.type === 'application/pdf' ||
+            archivo.name.toLowerCase().endsWith('.pdf');
+
+        if (!esPdf) {
+            setCvFile(null);
+            e.target.value = '';
+            setErroresCampos(prev => ({
+                ...prev,
+                cvFile: 'Solo se permiten archivos en formato PDF.'
+            }));
+            return;
+        }
+
+        if (archivo.size > MAX_PDF_SIZE_BYTES) {
+            setCvFile(null);
+            e.target.value = '';
+            setErroresCampos(prev => ({
+                ...prev,
+                cvFile: 'El archivo supera el tamaño máximo permitido de 5 MB.'
+            }));
+            return;
+        }
+
+        setCvFile(archivo);
         setErroresCampos(prev => ({ ...prev, cvFile: null }));
     };
 
@@ -120,7 +166,11 @@ const PostulacionPublica = () => {
         if (!formData.telefono.trim()) nuevosErrores.telefono = 'El teléfono es obligatorio.';
         else if (!phoneRegex.test(formData.telefono.trim())) nuevosErrores.telefono = 'Formato inválido (Ej: +56912345678).';
 
-        if (!cvFile) nuevosErrores.cvFile = 'Debes adjuntar tu Currículum Vitae en PDF.';
+        if (!cvFile) {
+            nuevosErrores.cvFile = 'Debes adjuntar tu Currículum Vitae en PDF.';
+        } else if (cvFile.size > MAX_PDF_SIZE_BYTES) {
+            nuevosErrores.cvFile = 'El archivo supera el tamaño máximo permitido de 5 MB.';
+        }
 
         setErroresCampos(nuevosErrores);
         return Object.keys(nuevosErrores).length === 0;
@@ -151,11 +201,14 @@ const PostulacionPublica = () => {
             });
 
             const primeraFamilia = Object.keys(cargosDisponibles)[0] || 'Operativo';
+            setCargoPostuladoExito(payload.cargoPostulacion);
             setEstado({
                 loading: false,
                 mensaje: '¡Postulación enviada con éxito! Te contactaremos pronto.',
                 error: false
             });
+            setModalExitoOpen(true);
+
             setFormData({
                 rut: '',
                 nombre: '',
@@ -193,6 +246,22 @@ const PostulacionPublica = () => {
                 </Link>
             </header>
 
+            {/* NOTIFICACIÓN FLOTANTE (ESQUINA SUPERIOR DERECHA) PARA ERRORES */}
+            {estado.error && estado.mensaje && (
+                <div className="postulacion-floating-toast toast-error" role="alert">
+                    <FiAlertCircle className="floating-toast-icon" />
+                    <span>{estado.mensaje}</span>
+                    <button
+                        type="button"
+                        className="floating-toast-close"
+                        onClick={() => setEstado(prev => ({ ...prev, mensaje: '', error: false }))}
+                        aria-label="Cerrar notificación"
+                    >
+                        <FiX />
+                    </button>
+                </div>
+            )}
+
             <main className="postulacion-container">
                 <div className="form-card-modern">
                     <div className="form-header-modern">
@@ -200,20 +269,14 @@ const PostulacionPublica = () => {
                         <p>Completa el siguiente formulario para ingresar a nuestro proceso de selección.</p>
                     </div>
 
-                    {estado.mensaje && (
-                        <div className={`status-banner ${estado.error ? 'banner-error' : 'banner-success'}`}>
-                            {estado.error ? <FiAlertCircle /> : <FiCheckCircle />}
-                            <span>{estado.mensaje}</span>
-                        </div>
-                    )}
-
                     <form onSubmit={handleSubmit} className="modern-form" noValidate>
                         <div className="form-section-title">Datos Personales</div>
 
                         <div className="form-row-modern">
                             <div className="input-group-modern">
-                                <label>RUT <span className="required-mark">*</span></label>
+                                <label htmlFor="rut">RUT <span className="required-mark">*</span></label>
                                 <input
+                                    id="rut"
                                     type="text"
                                     name="rut"
                                     value={formData.rut}
@@ -229,8 +292,9 @@ const PostulacionPublica = () => {
                                 )}
                             </div>
                             <div className="input-group-modern">
-                                <label>Nombre Completo <span className="required-mark">*</span></label>
+                                <label htmlFor="nombre">Nombre Completo <span className="required-mark">*</span></label>
                                 <input
+                                    id="nombre"
                                     type="text"
                                     name="nombre"
                                     value={formData.nombre}
@@ -248,8 +312,9 @@ const PostulacionPublica = () => {
 
                         <div className="form-row-modern">
                             <div className="input-group-modern">
-                                <label>Fecha de Nacimiento <span className="required-mark">*</span></label>
+                                <label htmlFor="fechaNacimiento">Fecha de Nacimiento <span className="required-mark">*</span></label>
                                 <input
+                                    id="fechaNacimiento"
                                     type="date"
                                     name="fechaNacimiento"
                                     value={formData.fechaNacimiento}
@@ -263,8 +328,9 @@ const PostulacionPublica = () => {
                                 )}
                             </div>
                             <div className="input-group-modern">
-                                <label>Teléfono <span className="required-mark">*</span></label>
+                                <label htmlFor="telefono">Teléfono <span className="required-mark">*</span></label>
                                 <input
+                                    id="telefono"
                                     type="text"
                                     name="telefono"
                                     value={formData.telefono}
@@ -282,8 +348,9 @@ const PostulacionPublica = () => {
                         </div>
 
                         <div className="input-group-modern full-width">
-                            <label>Correo Electrónico <span className="required-mark">*</span></label>
+                            <label htmlFor="correo">Correo Electrónico <span className="required-mark">*</span></label>
                             <input
+                                id="correo"
                                 type="email"
                                 name="correo"
                                 value={formData.correo}
@@ -302,8 +369,9 @@ const PostulacionPublica = () => {
 
                         <div className="form-row-modern">
                             <div className="input-group-modern">
-                                <label>Familia de Cargo</label>
+                                <label htmlFor="familiaCargo">Familia de Cargo</label>
                                 <select
+                                    id="familiaCargo"
                                     name="familiaCargo"
                                     value={formData.familiaCargo}
                                     onChange={handleChange}
@@ -315,8 +383,9 @@ const PostulacionPublica = () => {
                                 </select>
                             </div>
                             <div className="input-group-modern">
-                                <label>Cargo al que Postula</label>
+                                <label htmlFor="cargoPostulacion">Cargo al que Postula</label>
                                 <select
+                                    id="cargoPostulacion"
                                     name="cargoPostulacion"
                                     value={formData.cargoPostulacion}
                                     onChange={handleChange}
@@ -332,18 +401,24 @@ const PostulacionPublica = () => {
                         <div className="form-section-title">Documentación</div>
 
                         <div className="input-group-modern full-width">
-                            <label>Currículum Vitae (PDF) <span className="required-mark">*</span></label>
+                            <label htmlFor="cv-upload">
+                                Currículum Vitae (PDF, máx. 5 MB) <span className="required-mark">*</span>
+                            </label>
                             <div className={`file-upload-wrapper ${erroresCampos.cvFile ? 'upload-error' : ''}`}>
                                 <input
                                     type="file"
                                     onChange={handleFileChange}
-                                    accept=".pdf"
+                                    accept=".pdf,application/pdf"
                                     className="modern-file-input"
                                     id="cv-upload"
                                 />
                                 <label htmlFor="cv-upload" className="file-upload-label">
                                     <FiUploadCloud className="upload-icon" />
-                                    <span>{cvFile ? cvFile.name : 'Haz clic para seleccionar o arrastra tu CV en PDF aquí'}</span>
+                                    <span>
+                                        {cvFile
+                                            ? `${cvFile.name} (${(cvFile.size / (1024 * 1024)).toFixed(2)} MB)`
+                                            : 'Haz clic para seleccionar o arrastra tu CV en PDF aquí (máx. 5 MB)'}
+                                    </span>
                                 </label>
                             </div>
                             {erroresCampos.cvFile && (
@@ -361,6 +436,55 @@ const PostulacionPublica = () => {
                     </form>
                 </div>
             </main>
+
+            {/* POP-UP MODAL DE CONFIRMACIÓN EXITOSA */}
+            {modalExitoOpen && (
+                <div className="postulacion-modal-overlay" onClick={() => setModalExitoOpen(false)}>
+                    <div
+                        className="postulacion-success-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            className="postulacion-modal-close"
+                            onClick={() => setModalExitoOpen(false)}
+                            aria-label="Cerrar"
+                        >
+                            <FiX />
+                        </button>
+
+                        <div className="success-modal-icon">
+                            <FiCheckCircle />
+                        </div>
+
+                        <h3>¡Postulación enviada con éxito!</h3>
+                        <p className="success-modal-text">
+                            {estado.mensaje || '¡Postulación enviada con éxito! Te contactaremos pronto.'}
+                        </p>
+
+                        {cargoPostuladoExito && (
+                            <div className="success-cargo-chip">
+                                Postulación registrada para: <strong>{cargoPostuladoExito}</strong>
+                            </div>
+                        )}
+
+                        <div className="success-modal-actions">
+                            <Link to="/estado" className="btn-modal-primary">
+                                <FiSearch /> Consultar Estado
+                            </Link>
+                            <button
+                                type="button"
+                                className="btn-modal-secondary"
+                                onClick={() => setModalExitoOpen(false)}
+                            >
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

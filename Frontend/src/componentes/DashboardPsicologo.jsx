@@ -7,7 +7,7 @@ import {
     FiUserCheck, FiFileText, FiUploadCloud,
     FiUser, FiMail, FiPhone, FiCreditCard, FiBriefcase,
     FiCalendar, FiRefreshCw, FiUsers, FiUserPlus,
-    FiExternalLink, FiPrinter, FiInfo
+    FiExternalLink, FiPrinter, FiInfo, FiShield
 } from 'react-icons/fi';
 import api from '../services/api';
 import { analizarEstadoIa } from '../utils/iaHelper';
@@ -17,6 +17,8 @@ import GestionOfertas from './GestionOfertas';
 import DirectorioCandidatos from './DirectorioCandidatos';
 import GestionUsuarios from './GestionUsuarios';
 import './DashboardPsicologo.css';
+
+const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 const opcionesCargos = {
     Operativo: ['Operario de Planta', 'Asistente de Producción', 'Técnico de Mantenimiento', 'Operario de Grúa'],
@@ -54,6 +56,36 @@ const escaparHtml = (texto) => {
         .replace(/"/g, '&quot;');
 };
 
+const construirUrlGoogleCalendar = (solicitud, datos) => {
+    if (!solicitud || !datos.fecha || !datos.hora) return '';
+    const inicio = new Date(`${datos.fecha}T${datos.hora}:00`);
+    const duracion = parseInt(datos.duracionMinutos, 10) || 45;
+    const fin = new Date(inicio.getTime() + duracion * 60000);
+
+    const formatearUtc = (date) =>
+        date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+    const titulo = `Entrevista Psicolaboral AquaChile — ${solicitud.nombreCandidato} (${solicitud.cargo})`;
+    const detalle = [
+        `Candidato: ${solicitud.nombreCandidato}`,
+        `Cargo: ${solicitud.cargo} (${solicitud.familiaCargo || 'General'})`,
+        `Solicitud: #SOL-${solicitud.id}`,
+        datos.notas ? `Notas: ${datos.notas}` : ''
+    ]
+        .filter(Boolean)
+        .join('\n');
+
+    const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: titulo,
+        dates: `${formatearUtc(inicio)}/${formatearUtc(fin)}`,
+        details: detalle,
+        location: datos.modalidad || 'Online'
+    });
+
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+};
+
 const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [solicitudes, setSolicitudes] = useState([]);
     const [metricasEquipo, setMetricasEquipo] = useState(null);
@@ -72,6 +104,18 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [eliminarModal, setEliminarModal] = useState({ isOpen: false, id: null, nombre: '' });
     const [evaluacionModal, setEvaluacionModal] = useState({ isOpen: false, solicitudId: null });
     const [datosEvaluacion, setDatosEvaluacion] = useState({ resultadoGeneral: 'Apto', observaciones: '' });
+
+    // Modal Agendar Entrevista (Calendar)
+    const [entrevistaModal, setEntrevistaModal] = useState({ isOpen: false, solicitud: null });
+    const [datosEntrevista, setDatosEntrevista] = useState({
+        fecha: '',
+        hora: '10:00',
+        duracionMinutos: 45,
+        modalidad: 'Online (Google Meet)',
+        notas: ''
+    });
+    const [agendandoEntrevista, setAgendandoEntrevista] = useState(false);
+    const [googleCalendarUrl, setGoogleCalendarUrl] = useState('');
 
     const [crearModalOpen, setCrearModalOpen] = useState(false);
     const [errorCrear, setErrorCrear] = useState('');
@@ -151,7 +195,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         fetchSolicitudes();
     }, []);
 
-    // Polling automático cada 12s solo si hay solicitudes en EN_PROCESO esperando respuesta de Gemini
     useEffect(() => {
         const hayPendientesIa = solicitudes.some(
             s => s.estado === 'EN_PROCESO' && !s.recomendacionIa
@@ -204,6 +247,63 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         }
     };
 
+    const abrirModalEntrevista = (sol) => {
+        const manana = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        setDatosEntrevista({
+            fecha: manana,
+            hora: '10:00',
+            duracionMinutos: 45,
+            modalidad: 'Online (Google Meet)',
+            notas: ''
+        });
+        setGoogleCalendarUrl('');
+        setEntrevistaModal({ isOpen: true, solicitud: sol });
+    };
+
+    const cerrarModalEntrevista = () => {
+        setEntrevistaModal({ isOpen: false, solicitud: null });
+        setGoogleCalendarUrl('');
+    };
+
+    const agendarEntrevista = async (e) => {
+        e.preventDefault();
+        const sol = entrevistaModal.solicitud;
+        if (!sol || !datosEntrevista.fecha || !datosEntrevista.hora) {
+            mostrarToast('Selecciona la fecha y hora de la entrevista.', 'error');
+            return;
+        }
+
+        setAgendandoEntrevista(true);
+        const fallbackCalendarUrl = construirUrlGoogleCalendar(sol, datosEntrevista);
+
+        try {
+            const payload = {
+                fechaHora: `${datosEntrevista.fecha}T${datosEntrevista.hora}:00`,
+                duracionMinutos: parseInt(datosEntrevista.duracionMinutos, 10) || 45,
+                modalidad: datosEntrevista.modalidad,
+                notas: datosEntrevista.notas.trim()
+            };
+
+            const { data } = await api.post(`/solicitudes/${sol.id}/entrevista`, payload);
+            setGoogleCalendarUrl(data?.googleCalendarUrl || fallbackCalendarUrl);
+            mostrarToast('Entrevista agendada y notificación enviada al candidato.', 'success');
+            await fetchSolicitudes(true);
+        } catch (error) {
+            console.error('Error al agendar entrevista:', error);
+            setGoogleCalendarUrl(fallbackCalendarUrl);
+            if (error.response?.status === 404 || error.response?.status === 405) {
+                mostrarToast('Endpoint de entrevista aún pendiente en backend. Puedes agregarla igual a Google Calendar.', 'info');
+            } else {
+                mostrarToast(
+                    error.response?.data?.message || 'No se pudo registrar en backend, pero puedes abrir Google Calendar.',
+                    'error'
+                );
+            }
+        } finally {
+            setAgendandoEntrevista(false);
+        }
+    };
+
     const imprimirFicha = (sol) => {
         const ventana = window.open('', '_blank', 'width=850,height=900');
         if (!ventana) {
@@ -240,6 +340,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                     .section { margin-bottom: 22px; }
                     .section h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.4px; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; }
                     .box { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; font-size: 13.5px; white-space: pre-wrap; }
+                    .disclaimer { margin-top: 8px; font-size: 11.5px; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; padding: 8px 10px; border-radius: 6px; }
                     .verdict { background: #f0fdf4; border: 1px solid #86efac; }
                     .footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; display: flex; justify-content: space-between; }
                     @media print { body { margin: 20px; } }
@@ -284,6 +385,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 <div class="section">
                     <h2>Análisis Automático de CV (Gemini IA)</h2>
                     <div class="box">${escaparHtml(sol.recomendacionIa || 'Sin análisis de IA registrado.')}</div>
+                    <div class="disclaimer">Nota: El análisis generado por IA es un apoyo orientativo y está sujeto a revisión humana obligatoria por parte del equipo de selección.</div>
                 </div>
 
                 <div class="section">
@@ -449,6 +551,35 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         }
     };
 
+    const handleModalCvChange = (e) => {
+        const archivo = e.target.files[0];
+        setErrorCrear('');
+        if (!archivo) {
+            setCvFile(null);
+            return;
+        }
+
+        const esPdf =
+            archivo.type === 'application/pdf' ||
+            archivo.name.toLowerCase().endsWith('.pdf');
+
+        if (!esPdf) {
+            setCvFile(null);
+            e.target.value = '';
+            setErrorCrear('Solo se permiten archivos en formato PDF.');
+            return;
+        }
+
+        if (archivo.size > MAX_PDF_SIZE_BYTES) {
+            setCvFile(null);
+            e.target.value = '';
+            setErrorCrear('El archivo PDF supera el tamaño máximo permitido de 5 MB.');
+            return;
+        }
+
+        setCvFile(archivo);
+    };
+
     const handleCrearSubmit = async (e) => {
         e.preventDefault();
         const rutLimpio = nuevaPostulacion.rut.trim();
@@ -468,6 +599,10 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         }
         if (!nuevaPostulacion.correo.trim()) {
             setErrorCrear('El correo electrónico es obligatorio.');
+            return;
+        }
+        if (cvFile && cvFile.size > MAX_PDF_SIZE_BYTES) {
+            setErrorCrear('El archivo PDF supera el tamaño máximo permitido de 5 MB.');
             return;
         }
 
@@ -785,19 +920,21 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             </div>
 
                             <div className="create-field">
-                                <label><FiUploadCloud /> Currículum Vitae (PDF)</label>
+                                <label><FiUploadCloud /> Currículum Vitae (PDF, máx. 5 MB)</label>
                                 <label htmlFor="modal-cv-upload" className="modern-cv-dropzone">
                                     <input
                                         id="modal-cv-upload"
                                         type="file"
-                                        accept=".pdf"
-                                        onChange={(e) => setCvFile(e.target.files[0])}
+                                        accept=".pdf,application/pdf"
+                                        onChange={handleModalCvChange}
                                         style={{ display: 'none' }}
                                     />
                                     <FiUploadCloud className="dropzone-icon" />
                                     <div className="dropzone-texts">
                                         <strong>
-                                            {cvFile ? cvFile.name : 'Haz clic aquí para adjuntar el CV en PDF'}
+                                            {cvFile
+                                                ? `${cvFile.name} (${(cvFile.size / (1024 * 1024)).toFixed(2)} MB)`
+                                                : 'Haz clic aquí para adjuntar el CV en PDF (máx. 5 MB)'}
                                         </strong>
                                         <span>Gemini IA evaluará este PDF cuando el candidato pase a "En Evaluación Psicológica"</span>
                                     </div>
@@ -922,6 +1059,13 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                             </p>
                                         </div>
                                     )}
+
+                                    <div className="ia-human-review-notice">
+                                        <FiShield />
+                                        <span>
+                                            <strong>Nota:</strong> Este análisis de IA es un apoyo orientativo y está sujeto a <strong>revisión humana obligatoria</strong> por parte del psicólogo evaluador.
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div className="trello-section-block">
@@ -988,6 +1132,13 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                 )}
 
                                 <button
+                                    className="sidebar-action-btn calendar-action-btn"
+                                    onClick={() => abrirModalEntrevista(solicitudSeleccionada)}
+                                >
+                                    <FiCalendar /> Agendar Entrevista
+                                </button>
+
+                                <button
                                     className="sidebar-action-btn"
                                     onClick={() => imprimirFicha(solicitudSeleccionada)}
                                 >
@@ -1015,6 +1166,107 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                 )}
                             </aside>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ================= MODAL AGENDAR ENTREVISTA (CALENDAR) ================= */}
+            {entrevistaModal.isOpen && entrevistaModal.solicitud && (
+                <div className="modal-overlay" onClick={cerrarModalEntrevista}>
+                    <div className="modern-create-modal" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
+                        <div className="create-modal-header">
+                            <div className="create-header-title">
+                                <div className="create-icon-badge"><FiCalendar /></div>
+                                <div>
+                                    <h3>Agendar Entrevista</h3>
+                                    <p>
+                                        Candidato: <strong>{entrevistaModal.solicitud.nombreCandidato}</strong> ({entrevistaModal.solicitud.cargo})
+                                    </p>
+                                </div>
+                            </div>
+                            <button className="trello-modal-close" onClick={cerrarModalEntrevista}>
+                                <FiX />
+                            </button>
+                        </div>
+
+                        <form onSubmit={agendarEntrevista} className="create-modal-form">
+                            <div className="create-form-grid-2">
+                                <div className="create-field">
+                                    <label><FiCalendar /> Fecha <span>*</span></label>
+                                    <input
+                                        type="date"
+                                        value={datosEntrevista.fecha}
+                                        onChange={(e) => setDatosEntrevista({ ...datosEntrevista, fecha: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="create-field">
+                                    <label><FiClock /> Hora <span>*</span></label>
+                                    <input
+                                        type="time"
+                                        value={datosEntrevista.hora}
+                                        onChange={(e) => setDatosEntrevista({ ...datosEntrevista, hora: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="create-form-grid-2">
+                                <div className="create-field">
+                                    <label>Duración (minutos)</label>
+                                    <select
+                                        value={datosEntrevista.duracionMinutos}
+                                        onChange={(e) => setDatosEntrevista({ ...datosEntrevista, duracionMinutos: e.target.value })}
+                                    >
+                                        <option value={30}>30 minutos</option>
+                                        <option value={45}>45 minutos</option>
+                                        <option value={60}>60 minutos</option>
+                                    </select>
+                                </div>
+                                <div className="create-field">
+                                    <label>Modalidad / Lugar</label>
+                                    <input
+                                        type="text"
+                                        value={datosEntrevista.modalidad}
+                                        onChange={(e) => setDatosEntrevista({ ...datosEntrevista, modalidad: e.target.value })}
+                                        placeholder="Online (Google Meet) o Planta"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="create-field">
+                                <label>Notas o enlace de videollamada</label>
+                                <textarea
+                                    rows="3"
+                                    value={datosEntrevista.notas}
+                                    onChange={(e) => setDatosEntrevista({ ...datosEntrevista, notas: e.target.value })}
+                                    placeholder="Instrucciones para el postulante o enlace de reunión..."
+                                />
+                            </div>
+
+                            {googleCalendarUrl && (
+                                <div className="calendar-ready-box">
+                                    <span>Evento listo para tu agenda:</span>
+                                    <a
+                                        href={googleCalendarUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn-google-calendar"
+                                    >
+                                        <FiExternalLink /> Agregar a Google Calendar
+                                    </a>
+                                </div>
+                            )}
+
+                            <div className="create-modal-footer">
+                                <button type="button" onClick={cerrarModalEntrevista} className="btn-cancelar">
+                                    Cerrar
+                                </button>
+                                <button type="submit" disabled={agendandoEntrevista} className="btn-guardar-modern">
+                                    {agendandoEntrevista ? 'Agendando...' : 'Confirmar y Enviar Invitación'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
