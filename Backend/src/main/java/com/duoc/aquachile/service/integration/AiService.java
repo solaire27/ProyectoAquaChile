@@ -24,11 +24,16 @@ import java.util.Map;
 @Service
 public class AiService {
 
-    @Value("${gemini.api.key}")
-    private String apiKey;
+    private static final String OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-    @Value("${gemini.api.url}")
-    private String apiUrl;
+    private static final List<String> MODELOS_OPENROUTER = List.of(
+            "google/gemma-4-26b-a4b-it:free",
+            "google/gemma-4-31b-it:free",
+            "openrouter/free"
+    );
+
+    @Value("${openrouter.api.key:}")
+    private String openRouterApiKey;
 
     @Value("${supabase.project.url}")
     private String supabaseUrl;
@@ -44,7 +49,7 @@ public class AiService {
         this.objectMapper = objectMapper;
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(10000); // 10 segundos
-        factory.setReadTimeout(120000);   // 120 segundos
+        factory.setReadTimeout(60000);    // 60 segundos
         this.restTemplate = new RestTemplate(factory);
     }
 
@@ -78,7 +83,7 @@ public class AiService {
         if (config == null) {
             return "Eres un psicólogo laboral experto en reclutamiento para AquaChile. " +
                     "Evalúa el siguiente CV para el cargo de '" + cargoPostulado + "'. " +
-                    "Sigue estrictamente este formato breve en español: " +
+                    "Sigue estrictamente este formato breve en español (sin markdown ni asteriscos): " +
                     "'Puntaje orientativo: X/10. Criterios: [fortalezas (+), brechas (-)]. " +
                     "Preguntas sugeridas: 1) ... 2) ... " +
                     "Nota: Apoyo orientativo sujeto a revisión humana obligatoria.'\n\n" +
@@ -117,88 +122,96 @@ public class AiService {
     }
 
     @Retryable(
-            value = {HttpStatusCodeException.class, Exception.class},
+            value = {HttpStatusCodeException.class},
             maxAttempts = 3,
-            backoff = @Backoff(delay = 5000, multiplier = 2.0)
+            backoff = @Backoff(delay = 3000, multiplier = 2.0)
     )
     @SuppressWarnings({"rawtypes", "unchecked"})
     public String evaluarCvConIA(String nombreArchivoSupabase, String cargoPostulado) {
+        if (openRouterApiKey == null || openRouterApiKey.isBlank()) {
+            return "Error: OPENROUTER_API_KEY no configurada en el servidor.";
+        }
+
+        long inicioGeneral = System.currentTimeMillis();
+
+        // 1. Descargar el PDF desde Supabase hacia la memoria
+        long inicioDescarga = System.currentTimeMillis();
+        String endpoint = supabaseUrl + "/storage/v1/object/cv_candidatos/" + nombreArchivoSupabase;
+        HttpHeaders headersDescarga = new HttpHeaders();
+        headersDescarga.setBearerAuth(serviceRoleKey);
+        HttpEntity<Void> requestDescarga = new HttpEntity<>(headersDescarga);
+
+        ResponseEntity<byte[]> responseDescarga = restTemplate.exchange(
+                endpoint, HttpMethod.GET, requestDescarga, byte[].class);
+
+        System.out.println("Descarga Supabase tomó: " + (System.currentTimeMillis() - inicioDescarga) + "ms");
+
+        if (!responseDescarga.getStatusCode().is2xxSuccessful() || responseDescarga.getBody() == null) {
+            return "Error: No se pudo descargar el CV de Supabase para analizarlo.";
+        }
+
+        // 2. Extraer y limpiar el texto usando PDFBox
+        String textoCv;
         try {
-            long inicioGeneral = System.currentTimeMillis();
-
-            // 1. Descargar el PDF desde Supabase hacia la memoria
-            long inicioDescarga = System.currentTimeMillis();
-            String endpoint = supabaseUrl + "/storage/v1/object/cv_candidatos/" + nombreArchivoSupabase;
-            HttpHeaders headersDescarga = new HttpHeaders();
-            headersDescarga.setBearerAuth(serviceRoleKey);
-            HttpEntity<Void> requestDescarga = new HttpEntity<>(headersDescarga);
-
-            ResponseEntity<byte[]> responseDescarga = restTemplate.exchange(
-                    endpoint, HttpMethod.GET, requestDescarga, byte[].class);
-
-            System.out.println("Descarga Supabase tomó: " + (System.currentTimeMillis() - inicioDescarga) + "ms");
-
-            if (!responseDescarga.getStatusCode().is2xxSuccessful() || responseDescarga.getBody() == null) {
-                return "Error: No se pudo descargar el CV de Supabase para analizarlo.";
-            }
-
-            // 2. Extraer y limpiar el texto usando PDFBox
             long inicioPdf = System.currentTimeMillis();
-            PDDocument document = PDDocument.load(responseDescarga.getBody());
-            PDFTextStripper stripper = new PDFTextStripper();
-            String textoCv = stripper.getText(document);
-            document.close();
-
+            try (PDDocument document = PDDocument.load(responseDescarga.getBody())) {
+                PDFTextStripper stripper = new PDFTextStripper();
+                textoCv = stripper.getText(document);
+            }
             textoCv = textoCv.replaceAll("\\s+", " ").trim();
             if (textoCv.length() > 4000) {
                 textoCv = textoCv.substring(0, 4000);
             }
             System.out.println("Extraer y limpiar texto PDF tomó: " + (System.currentTimeMillis() - inicioPdf) + "ms");
-
-            // 3. Construir el Prompt estructurado desde prompts_cv.json
-            String prompt = construirPrompt(cargoPostulado, textoCv);
-
-            // 4. Armar JSON para Gemini
-            Map part = new HashMap();
-            part.put("text", prompt);
-            Map content = new HashMap();
-            content.put("parts", List.of(part));
-
-            Map generationConfig = new HashMap();
-            generationConfig.put("maxOutputTokens", 350); // Espacio suficiente para puntaje + criterios + 2 preguntas + nota
-            generationConfig.put("temperature", 0.2);
-
-            Map requestBody = new HashMap();
-            requestBody.put("contents", List.of(content));
-            requestBody.put("generationConfig", generationConfig);
-
-            HttpHeaders headersGemini = new HttpHeaders();
-            headersGemini.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity requestGemini = new HttpEntity(requestBody, headersGemini);
-
-            // 5. Llamar a la API de Gemini
-            long inicioGemini = System.currentTimeMillis();
-            String urlCompleta = apiUrl + "?key=" + apiKey;
-            Map response = restTemplate.postForObject(urlCompleta, requestGemini, Map.class);
-            System.out.println("Consulta a Gemini tomó: " + (System.currentTimeMillis() - inicioGemini) + "ms");
-            System.out.println("Tiempo total del proceso completo: " + (System.currentTimeMillis() - inicioGeneral) + "ms");
-
-            // 6. Extraer el texto de la respuesta
-            if (response != null && response.containsKey("candidates")) {
-                List candidates = (List) response.get("candidates");
-                Map firstCandidate = (Map) candidates.get(0);
-                Map contentRes = (Map) firstCandidate.get("content");
-                List partsRes = (List) contentRes.get("parts");
-                Map firstPart = (Map) partsRes.get(0);
-
-                return (String) firstPart.get("text");
-            }
-
-            return "No se recibió respuesta válida del modelo de IA.";
-
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Error procesando IA o descargando el documento: " + e.getMessage();
+            return "Error al leer el archivo PDF del CV: " + e.getMessage();
         }
+
+        // 3. Construir el Prompt estructurado desde prompts_cv.json
+        String prompt = construirPrompt(cargoPostulado, textoCv);
+
+        // 4. Armar JSON para OpenRouter (formato OpenAI compatible + lista de fallback)
+        Map<String, Object> mensajeUsuario = new HashMap<>();
+        mensajeUsuario.put("role", "user");
+        mensajeUsuario.put("content", prompt);
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("models", MODELOS_OPENROUTER);
+        requestBody.put("messages", List.of(mensajeUsuario));
+        requestBody.put("max_tokens", 400);
+        requestBody.put("temperature", 0.2);
+
+        HttpHeaders headersOpenRouter = new HttpHeaders();
+        headersOpenRouter.setContentType(MediaType.APPLICATION_JSON);
+        headersOpenRouter.setBearerAuth(openRouterApiKey.trim());
+        headersOpenRouter.set("HTTP-Referer", "https://aquachile-portal.cl");
+        headersOpenRouter.set("X-Title", "AquaChile Portal Seleccion");
+
+        HttpEntity<Map<String, Object>> requestOpenRouter = new HttpEntity<>(requestBody, headersOpenRouter);
+
+        // 5. Llamar a OpenRouter (si lanza HttpStatusCodeException, @Retryable reintenta automáticamente)
+        long inicioIa = System.currentTimeMillis();
+        ResponseEntity<Map> responseEntity = restTemplate.postForEntity(OPENROUTER_API_URL, requestOpenRouter, Map.class);
+        Map response = responseEntity.getBody();
+        System.out.println("Consulta a OpenRouter tomó: " + (System.currentTimeMillis() - inicioIa) + "ms");
+        System.out.println("Tiempo total del proceso completo: " + (System.currentTimeMillis() - inicioGeneral) + "ms");
+
+        // 6. Extraer el texto de la respuesta y depurar si falla
+        System.out.println("Respuesta cruda de OpenRouter: " + response);
+
+        if (response != null && response.containsKey("choices")) {
+            List choices = (List) response.get("choices");
+            if (choices != null && !choices.isEmpty()) {
+                Map firstChoice = (Map) choices.get(0);
+                Map message = (Map) firstChoice.get("message");
+                if (message != null && message.get("content") != null) {
+                    String modeloUsado = response.get("model") != null ? response.get("model").toString() : "desconocido";
+                    System.out.println("Modelo OpenRouter utilizado: " + modeloUsado);
+                    return message.get("content").toString().trim();
+                }
+            }
+        }
+
+        return "No se recibió respuesta válida del modelo de IA. Respuesta de API: " + response;
     }
 }

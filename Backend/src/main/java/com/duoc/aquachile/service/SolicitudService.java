@@ -216,11 +216,21 @@ public class SolicitudService {
     public void procesarEvaluacionEnSegundoPlano(Long solicitudId, String urlCv, String cargo) {
         try {
             String recomendacion = aiService.evaluarCvConIA(urlCv, cargo);
+            if (recomendacion == null || recomendacion.isBlank()) {
+                recomendacion = "Error al procesar el CV con IA: No se recibió respuesta válida.";
+            }
             SolicitudEvaluacion solicitud = obtenerPorId(solicitudId);
             solicitud.setRecomendacionIa(recomendacion);
             solicitudRepository.save(solicitud);
         } catch (Exception e) {
             System.err.println("Error procesando IA en segundo plano para la solicitud " + solicitudId + ": " + e.getMessage());
+            try {
+                SolicitudEvaluacion solicitud = obtenerPorId(solicitudId);
+                solicitud.setRecomendacionIa("Error al procesar el CV con IA: " + e.getMessage());
+                solicitudRepository.save(solicitud);
+            } catch (Exception ex) {
+                System.err.println("No se pudo guardar el estado de error de IA para la solicitud " + solicitudId + ": " + ex.getMessage());
+            }
         }
     }
 
