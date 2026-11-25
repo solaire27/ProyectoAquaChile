@@ -1,6 +1,7 @@
 package com.duoc.aquachile.service;
 
 import com.duoc.aquachile.dto.CandidatoRequestDTO;
+import com.duoc.aquachile.dto.EntrevistaRequestDTO;
 import com.duoc.aquachile.dto.SolicitudEstadoUpdateDTO;
 import com.duoc.aquachile.dto.SolicitudRequestDTO;
 import com.duoc.aquachile.exception.ConflictException;
@@ -12,12 +13,13 @@ import com.duoc.aquachile.model.Usuario;
 import com.duoc.aquachile.repository.SolicitudRepository;
 import com.duoc.aquachile.repository.UsuarioRepository;
 import com.duoc.aquachile.service.integration.AiService;
+import com.duoc.aquachile.service.integration.EmailService;
 import jakarta.validation.Valid;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.duoc.aquachile.dto.EntrevistaRequestDTO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -28,16 +30,19 @@ public class SolicitudService {
     private final CandidatoService candidatoService;
     private final UsuarioRepository usuarioRepository;
     private final AiService aiService;
+    private final EmailService emailService;
 
     public SolicitudService(
             SolicitudRepository solicitudRepository,
             CandidatoService candidatoService,
             UsuarioRepository usuarioRepository,
-            AiService aiService) {
+            AiService aiService,
+            EmailService emailService) {
         this.solicitudRepository = solicitudRepository;
         this.candidatoService = candidatoService;
         this.usuarioRepository = usuarioRepository;
         this.aiService = aiService;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -64,6 +69,27 @@ public class SolicitudService {
         }
 
         solicitud = solicitudRepository.save(solicitud);
+
+        // Enviar correo de invitación con archivo .ics adjunto en segundo plano
+        if (solicitud.getCandidato() != null
+                && solicitud.getCandidato().getCorreo() != null
+                && !solicitud.getCandidato().getCorreo().isBlank()) {
+            String correo = solicitud.getCandidato().getCorreo();
+            String nombre = solicitud.getCandidato().getNombre();
+            String cargo = solicitud.getCargo();
+            String familia = solicitud.getFamiliaCargo();
+            Long solicitudId = solicitud.getId();
+            LocalDateTime fechaHora = solicitud.getFechaEntrevista();
+            Integer duracion = solicitud.getDuracionEntrevistaMinutos();
+            String modalidad = solicitud.getModalidadEntrevista();
+            String notas = solicitud.getNotasEntrevista();
+
+            CompletableFuture.runAsync(() ->
+                    emailService.enviarInvitacionEntrevista(
+                            correo, nombre, cargo, familia, solicitudId, fechaHora, duracion, modalidad, notas
+                    )
+            );
+        }
 
         boolean sinAnalisisValido = solicitud.getRecomendacionIa() == null
                 || solicitud.getRecomendacionIa().startsWith("Error")
@@ -92,7 +118,20 @@ public class SolicitudService {
         solicitud.setObservaciones("Postulación ingresada automáticamente desde el portal público");
         solicitud.setEstado(EstadoSolicitud.NUEVA_POSTULACION);
 
-        return solicitudRepository.save(solicitud);
+        SolicitudEvaluacion guardada = solicitudRepository.save(solicitud);
+
+        // Enviar correo de confirmación de postulación en segundo plano
+        if (candidato.getCorreo() != null && !candidato.getCorreo().isBlank()) {
+            String correo = candidato.getCorreo();
+            String nombre = candidato.getNombre();
+            Long solicitudId = guardada.getId();
+
+            CompletableFuture.runAsync(() ->
+                    emailService.enviarConfirmacionPostulacion(correo, nombre, cargoLimpio, solicitudId)
+            );
+        }
+
+        return guardada;
     }
 
     @Transactional

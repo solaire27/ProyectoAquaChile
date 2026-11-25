@@ -25,15 +25,11 @@ public class CandidatoService {
         String cvFinal = (rutaCv != null && !rutaCv.isBlank()) ? rutaCv : dto.getUrlCv();
 
         Optional<Candidato> porRut = candidatoRepository.findByRut(rutLimpio);
-        Optional<Candidato> porCorreo = candidatoRepository.findByCorreoIgnoreCase(correoLimpio);
+
 
         // Si el RUT ya existe, reutilizamos al candidato para que pueda postular a otros cargos
         if (porRut.isPresent()) {
             Candidato existente = porRut.get();
-
-            if (porCorreo.isPresent() && !porCorreo.get().getId().equals(existente.getId())) {
-                throw new ConflictException("El correo electrónico ingresado ya está registrado con otro postulante.");
-            }
 
             existente.setNombre(dto.getNombre());
             existente.setCorreo(correoLimpio);
@@ -50,9 +46,6 @@ public class CandidatoService {
         }
 
         // Si es un RUT nuevo, verificamos que el correo no pertenezca a otra persona
-        if (porCorreo.isPresent()) {
-            throw new ConflictException("El correo electrónico ingresado ya está registrado con otro RUT.");
-        }
 
         Candidato candidato = new Candidato();
         candidato.setNombre(dto.getNombre());
@@ -91,11 +84,6 @@ public class CandidatoService {
                     throw new ConflictException("El RUT ingresado ya pertenece a otro candidato.");
                 });
 
-        candidatoRepository.findByCorreoIgnoreCase(correoLimpio)
-                .filter(c -> !c.getId().equals(id))
-                .ifPresent(c -> {
-                    throw new ConflictException("El correo electrónico ingresado ya pertenece a otro candidato.");
-                });
 
         candidato.setNombre(dto.getNombre());
         candidato.setCorreo(correoLimpio);
