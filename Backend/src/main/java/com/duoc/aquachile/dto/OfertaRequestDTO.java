@@ -14,8 +14,20 @@ public class OfertaRequestDTO {
     @NotBlank(message = "La familia de cargo es obligatoria")
     private String familiaCargo;
 
+    private String ubicacion;
+
+    private String modalidad; // Presencial, Híbrida o Remota
+
     @NotBlank(message = "La descripción es obligatoria")
     private String descripcion;
+
+    private String funcionesPrincipales;
+
+    private String requisitos;
+
+    private String beneficios;
+
+    private String rangoSalarial;
 
     @NotNull(message = "Debes indicar la cantidad de cupos")
     @Min(value = 1, message = "Debe haber al menos 1 cupo disponible")

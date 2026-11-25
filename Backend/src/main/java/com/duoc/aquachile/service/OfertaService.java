@@ -1,9 +1,11 @@
 package com.duoc.aquachile.service;
 
 import com.duoc.aquachile.dto.OfertaRequestDTO;
+import com.duoc.aquachile.exception.ResourceNotFoundException;
 import com.duoc.aquachile.model.Oferta;
 import com.duoc.aquachile.repository.OfertaRepository;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -17,10 +19,7 @@ public class OfertaService {
 
     public Oferta crearOferta(OfertaRequestDTO dto) {
         Oferta oferta = new Oferta();
-        oferta.setTituloCargo(dto.getTituloCargo());
-        oferta.setFamiliaCargo(dto.getFamiliaCargo());
-        oferta.setDescripcion(dto.getDescripcion());
-        oferta.setCuposDisponibles(dto.getCuposDisponibles());
+        mapearCampos(oferta, dto);
         // estadoActivo y fechaPublicacion se asignan solos por el modelo
         return ofertaRepository.save(oferta);
     }
@@ -37,25 +36,36 @@ public class OfertaService {
 
     public Oferta actualizarOferta(Long id, OfertaRequestDTO dto) {
         Oferta oferta = ofertaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Oferta no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Oferta no encontrada con ID: " + id));
 
-        oferta.setTituloCargo(dto.getTituloCargo());
-        oferta.setFamiliaCargo(dto.getFamiliaCargo());
-        oferta.setDescripcion(dto.getDescripcion());
-        oferta.setCuposDisponibles(dto.getCuposDisponibles());
-
+        mapearCampos(oferta, dto);
         return ofertaRepository.save(oferta);
     }
 
     // Método para apagar o encender una oferta sin borrarla
     public Oferta cambiarEstado(Long id, boolean nuevoEstado) {
         Oferta oferta = ofertaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Oferta no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Oferta no encontrada con ID: " + id));
         oferta.setEstadoActivo(nuevoEstado);
         return ofertaRepository.save(oferta);
     }
 
     public void eliminarOferta(Long id) {
-        ofertaRepository.deleteById(id);
+        Oferta oferta = ofertaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Oferta no encontrada con ID: " + id));
+        ofertaRepository.delete(oferta);
+    }
+
+    private void mapearCampos(Oferta oferta, OfertaRequestDTO dto) {
+        oferta.setTituloCargo(dto.getTituloCargo());
+        oferta.setFamiliaCargo(dto.getFamiliaCargo());
+        oferta.setUbicacion(dto.getUbicacion());
+        oferta.setModalidad(dto.getModalidad());
+        oferta.setDescripcion(dto.getDescripcion());
+        oferta.setFuncionesPrincipales(dto.getFuncionesPrincipales());
+        oferta.setRequisitos(dto.getRequisitos());
+        oferta.setBeneficios(dto.getBeneficios());
+        oferta.setRangoSalarial(dto.getRangoSalarial());
+        oferta.setCuposDisponibles(dto.getCuposDisponibles());
     }
 }
