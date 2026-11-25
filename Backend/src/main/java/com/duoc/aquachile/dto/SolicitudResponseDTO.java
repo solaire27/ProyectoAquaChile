@@ -9,12 +9,10 @@ public class SolicitudResponseDTO {
 
     private Long id;
 
-    // Datos del candidato asociado
     private Long candidatoId;
     private String nombreCandidato;
     private String urlCv;
 
-    // Datos del responsable (puede ser null)
     private Long responsableId;
     private String nombreResponsable;
 
@@ -24,10 +22,14 @@ public class SolicitudResponseDTO {
     private EstadoSolicitud estado;
     private String observaciones;
 
-    // --- Datos de la Evaluación ---
     private String resultadoEvaluacion;
     private String observacionEvaluacion;
 
-    // --- Recomendación del Agente IA ---
     private String recomendacionIa;
+
+    // --- Entrevista Agendada ---
+    private LocalDateTime fechaEntrevista;
+    private Integer duracionEntrevistaMinutos;
+    private String modalidadEntrevista;
+    private String notasEntrevista;
 }

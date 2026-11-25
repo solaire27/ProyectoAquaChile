@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import {
     FiSearch, FiPlus, FiClock, FiCpu, FiAlignLeft,
-    FiFilter, FiX, FiLayers, FiAlertTriangle, FiInbox
+    FiFilter, FiX, FiLayers, FiAlertTriangle, FiInbox, FiCalendar
 } from 'react-icons/fi';
 import { analizarEstadoIa } from '../utils/iaHelper';
+
+const OPCIONES_FECHA = [
+    { key: 'TODAS', label: 'Todas' },
+    { key: 'HOY', label: 'Hoy' },
+    { key: 'SEMANA', label: 'Últimos 7 días' },
+    { key: 'MES', label: 'Este mes' }
+];
 
 const TableroKanban = ({
     solicitudes,
@@ -15,6 +22,8 @@ const TableroKanban = ({
     setBusqueda,
     filtroFamilia,
     setFiltroFamilia,
+    filtroFecha,
+    setFiltroFecha,
     analizandoIaId,
     obtenerIniciales,
     onSeleccionarSolicitud,
@@ -47,11 +56,13 @@ const TableroKanban = ({
         onDropTarjeta(id, estadoActual, nuevoEstado);
     };
 
-    const hayFiltrosActivos = busqueda.trim() !== '' || filtroFamilia !== 'TODAS';
+    const hayFiltrosActivos =
+        busqueda.trim() !== '' || filtroFamilia !== 'TODAS' || filtroFecha !== 'TODAS';
 
     const limpiarFiltros = () => {
         setBusqueda('');
         setFiltroFamilia('TODAS');
+        setFiltroFecha('TODAS');
     };
 
     return (
@@ -92,6 +103,24 @@ const TableroKanban = ({
                     </div>
                 </div>
 
+                {/* FILTRO POR FECHA */}
+                <div className="filter-pills-row date-filter-row">
+                    <span className="filter-label-tag"><FiCalendar /> Fecha de postulación:</span>
+                    <div className="date-segmented-group">
+                        {OPCIONES_FECHA.map(op => (
+                            <button
+                                key={op.key}
+                                type="button"
+                                className={`date-pill-btn ${filtroFecha === op.key ? 'active' : ''}`}
+                                onClick={() => setFiltroFecha(op.key)}
+                            >
+                                {op.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* FILTRO POR ÁREA */}
                 <div className="filter-pills-row">
                     <span className="filter-label-tag"><FiFilter /> Filtrar por área:</span>
 
@@ -155,11 +184,15 @@ const TableroKanban = ({
                             <div className="trello-cards-stack">
                                 {tarjetas.map(sol => {
                                     const famColor = obtenerColorFamilia(sol.familiaCargo);
-                                    const enEvaluacionOFinalizada = sol.estado === 'EN_PROCESO' || sol.estado === 'FINALIZADA';
+                                    const etapaConIa =
+                                        sol.estado === 'PENDIENTE' ||
+                                        sol.estado === 'EN_PROCESO' ||
+                                        sol.estado === 'FINALIZADA';
                                     const infoIa = analizarEstadoIa(sol.recomendacionIa);
                                     const estaAnalizandoIa =
                                         analizandoIaId?.toString() === sol.id.toString() ||
-                                        (sol.estado === 'EN_PROCESO' && infoIa.estado === 'pendiente');
+                                        ((sol.estado === 'PENDIENTE' || sol.estado === 'EN_PROCESO') &&
+                                            infoIa.estado === 'pendiente');
 
                                     return (
                                         <div
@@ -190,6 +223,24 @@ const TableroKanban = ({
                                             <h4 className="trello-card-title">{sol.nombreCandidato}</h4>
                                             <p className="trello-card-subtitle">{sol.cargo}</p>
 
+                                            {sol.fechaEntrevista && (
+                                                <div className="kanban-interview-chip" title="Entrevista agendada">
+                                                    <FiCalendar />
+                                                    <span>
+                                                        Entrevista:{' '}
+                                                        {new Date(sol.fechaEntrevista).toLocaleDateString('es-CL', {
+                                                            day: '2-digit',
+                                                            month: 'short'
+                                                        })}{' '}
+                                                        ·{' '}
+                                                        {new Date(sol.fechaEntrevista).toLocaleTimeString('es-CL', {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </span>
+                                                </div>
+                                            )}
+
                                             {estaAnalizandoIa && (
                                                 <div className="ia-analyzing-banner">
                                                     <FiCpu className="spin-icon" /> Analizando CV con IA...
@@ -211,13 +262,13 @@ const TableroKanban = ({
                                                             : 'Hoy'}
                                                     </span>
 
-                                                    {enEvaluacionOFinalizada && infoIa.estado === 'ok' && (
+                                                    {etapaConIa && infoIa.estado === 'ok' && (
                                                         <span className="trello-badge ia-badge" title="CV evaluado por Gemini IA">
                                                             <FiCpu /> {infoIa.puntaje !== null ? `IA: ${infoIa.puntaje}/10` : 'IA'}
                                                         </span>
                                                     )}
 
-                                                    {enEvaluacionOFinalizada && infoIa.estado === 'error' && (
+                                                    {etapaConIa && infoIa.estado === 'error' && (
                                                         <span className="trello-badge ia-error-badge" title="Error al analizar el CV">
                                                             <FiAlertTriangle /> Error IA
                                                         </span>

@@ -18,17 +18,14 @@ public class SolicitudEvaluacion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Relación con el Candidato
     @ManyToOne(optional = false)
     @JoinColumn(name = "candidato_id", nullable = false)
     private Candidato candidato;
 
-    // Relación con el Usuario (Puede ser nulo cuando recién entra la postulación)
     @ManyToOne
     @JoinColumn(name = "responsable_id")
     private Usuario responsable;
 
-    // --- NUEVO: Relación en cascada para eliminar la evaluación asociada ---
     @OneToOne(mappedBy = "solicitud", cascade = CascadeType.ALL, orphanRemoval = true)
     private Evaluacion evaluacion;
 
@@ -38,7 +35,6 @@ public class SolicitudEvaluacion {
     @Column(name = "familia_cargo", nullable = false, length = 100)
     private String familiaCargo;
 
-    // Se asigna la fecha automáticamente al crear el registro
     @CreationTimestamp
     @Column(name = "fecha_solicitud", updatable = false)
     private LocalDateTime fechaSolicitud;
@@ -49,6 +45,20 @@ public class SolicitudEvaluacion {
 
     @Column(length = 500)
     private String observaciones;
+
     @Column(name = "recomendacion_ia", columnDefinition = "TEXT")
     private String recomendacionIa;
+
+    // --- Datos de Entrevista Agendada ---
+    @Column(name = "fecha_entrevista")
+    private LocalDateTime fechaEntrevista;
+
+    @Column(name = "duracion_entrevista_minutos")
+    private Integer duracionEntrevistaMinutos;
+
+    @Column(name = "modalidad_entrevista", length = 120)
+    private String modalidadEntrevista;
+
+    @Column(name = "notas_entrevista", length = 500)
+    private String notasEntrevista;
 }
