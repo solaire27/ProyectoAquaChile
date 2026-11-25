@@ -218,7 +218,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
 
         const intervalo = setInterval(() => {
             fetchSolicitudes(true);
-        }, 12000);
+        }, 3000); // antes 12000
 
         return () => clearInterval(intervalo);
     }, [solicitudes]);
@@ -1235,9 +1235,9 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                     </div>
 
                                     {etapaModalConIa ? (
-                                        <p className="ia-content-box">
+                                        <p className="ia-content-box" style={{ whiteSpace: 'pre-line' }}>
                                             {solicitudSeleccionada.recomendacionIa ||
-                                                'Gemini está analizando el CV en segundo plano. Si esta postulación ya estaba en esta etapa antes de activar el flujo, presiona "Analizar ahora".'}
+                                                'La IA está analizando el CV en segundo plano. Si esta postulación ya estaba en esta etapa antes de activar el flujo, presiona "Analizar ahora".'}
                                         </p>
                                     ) : (
                                         <div className="eval-pending-box">

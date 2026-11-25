@@ -25,10 +25,10 @@ import java.util.Map;
 public class AiService {
 
     private static final String OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-
     private static final List<String> MODELOS_OPENROUTER = List.of(
-            "google/gemma-4-26b-a4b-it:free",
-            "google/gemma-4-31b-it:free"
+            "nvidia/nemotron-3.5-lightning:free",
+            "nvidia/nemotron-3.5-super-vl:free",
+            "openrouter/free"
     );
 
     @Value("${openrouter.api.key:}")
@@ -79,14 +79,30 @@ public class AiService {
     private String construirPrompt(String cargoPostulado, String textoCv) {
         PromptCargoDTO config = promptsPorCargo.get(normalizarClave(cargoPostulado));
 
+        String formatoSalida = """
+                Sigue estrictamente este formato en español (sin markdown, sin asteriscos y sin corchetes):
+
+                Puntaje orientativo: X/10
+
+                Fortalezas:
+                - Punto breve 1
+                - Punto breve 2
+
+                Brechas:
+                - Punto breve 1
+                - Punto breve 2
+
+                Preguntas sugeridas:
+                1) Pregunta 1
+                2) Pregunta 2
+
+                Nota: Apoyo orientativo sujeto a revisión humana obligatoria.
+                """;
+
         if (config == null) {
             return "Eres un psicólogo laboral experto en reclutamiento para AquaChile. " +
-                    "Evalúa el siguiente CV para el cargo de '" + cargoPostulado + "'. " +
-                    "Sigue estrictamente este formato breve en español (sin markdown ni asteriscos): " +
-                    "'Puntaje orientativo: X/10. Criterios: [fortalezas (+), brechas (-)]. " +
-                    "Preguntas sugeridas: 1) ... 2) ... " +
-                    "Nota: Apoyo orientativo sujeto a revisión humana obligatoria.'\n\n" +
-                    "CV:\n" + textoCv;
+                    "Evalúa el siguiente CV para el cargo de '" + cargoPostulado + "'.\n\n" +
+                    formatoSalida + "\nCV:\n" + textoCv;
         }
 
         StringBuilder sb = new StringBuilder();
@@ -104,22 +120,17 @@ public class AiService {
         }
 
         if (config.getPalabrasClave() != null && !config.getPalabrasClave().isEmpty()) {
-            sb.append("Palabras clave a valorar (+): ").append(String.join(", ", config.getPalabrasClave())).append(".\n");
+            sb.append("Palabras clave a valorar: ").append(String.join(", ", config.getPalabrasClave())).append(".\n");
         }
 
         if (config.getPuntosNegativos() != null && !config.getPuntosNegativos().isEmpty()) {
-            sb.append("Alertas o puntos negativos (-): ").append(String.join(", ", config.getPuntosNegativos())).append(".\n");
+            sb.append("Alertas o brechas a considerar: ").append(String.join(", ", config.getPuntosNegativos())).append(".\n");
         }
 
-        if (config.getRespuestaGuiaEsperada() != null && config.getRespuestaGuiaEsperada().getEjemploSalida() != null) {
-            sb.append("\nSigue estrictamente este formato y extensión de salida (sin markdown ni asteriscos):\n");
-            sb.append(config.getRespuestaGuiaEsperada().getEjemploSalida()).append("\n");
-        }
-
+        sb.append("\n").append(formatoSalida);
         sb.append("\nCV del candidato:\n").append(textoCv);
         return sb.toString();
     }
-
     @Retryable(
             value = {HttpStatusCodeException.class},
             maxAttempts = 3,
@@ -177,8 +188,9 @@ public class AiService {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("models", MODELOS_OPENROUTER);
         requestBody.put("messages", List.of(mensajeUsuario));
-        requestBody.put("max_tokens", 400);
+        requestBody.put("max_tokens", 4000);
         requestBody.put("temperature", 0.2);
+        requestBody.put("reasoning", Map.of("enabled", false));
 
         HttpHeaders headersOpenRouter = new HttpHeaders();
         headersOpenRouter.setContentType(MediaType.APPLICATION_JSON);
