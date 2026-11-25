@@ -28,8 +28,7 @@ public class AiService {
 
     private static final List<String> MODELOS_OPENROUTER = List.of(
             "google/gemma-4-26b-a4b-it:free",
-            "google/gemma-4-31b-it:free",
-            "openrouter/free"
+            "google/gemma-4-31b-it:free"
     );
 
     @Value("${openrouter.api.key:}")
