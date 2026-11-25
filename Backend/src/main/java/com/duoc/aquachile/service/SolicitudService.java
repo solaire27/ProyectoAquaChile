@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.duoc.aquachile.dto.EntrevistaRequestDTO;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -37,6 +38,42 @@ public class SolicitudService {
         this.candidatoService = candidatoService;
         this.usuarioRepository = usuarioRepository;
         this.aiService = aiService;
+    }
+
+    @Transactional
+    public SolicitudEvaluacion agendarEntrevista(Long id, EntrevistaRequestDTO dto) {
+        SolicitudEvaluacion solicitud = obtenerPorId(id);
+
+        solicitud.setFechaEntrevista(dto.getFechaHora());
+        solicitud.setDuracionEntrevistaMinutos(
+                dto.getDuracionMinutos() != null && dto.getDuracionMinutos() > 0 ? dto.getDuracionMinutos() : 45
+        );
+        solicitud.setModalidadEntrevista(
+                dto.getModalidad() != null && !dto.getModalidad().isBlank() ? dto.getModalidad().trim() : "Online (Google Meet)"
+        );
+        solicitud.setNotasEntrevista(dto.getNotas() != null ? dto.getNotas().trim() : null);
+
+        if (dto.getResponsableId() != null) {
+            Usuario responsable = usuarioRepository.findById(dto.getResponsableId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario responsable no encontrado con ID: " + dto.getResponsableId()));
+            solicitud.setResponsable(responsable);
+        }
+
+        if (Boolean.TRUE.equals(dto.getMoverAEnProceso())) {
+            solicitud.setEstado(EstadoSolicitud.EN_PROCESO);
+        }
+
+        solicitud = solicitudRepository.save(solicitud);
+
+        boolean sinAnalisisValido = solicitud.getRecomendacionIa() == null
+                || solicitud.getRecomendacionIa().startsWith("Error")
+                || solicitud.getRecomendacionIa().contains("No se recibió respuesta válida");
+
+        if (solicitud.getEstado() == EstadoSolicitud.EN_PROCESO && sinAnalisisValido) {
+            dispararAnalisisSiCorresponde(solicitud);
+        }
+
+        return solicitud;
     }
 
     @Transactional
@@ -108,7 +145,8 @@ public class SolicitudService {
                 || solicitud.getRecomendacionIa().startsWith("Error")
                 || solicitud.getRecomendacionIa().contains("No se recibió respuesta válida");
 
-        if (dto.getEstado() == EstadoSolicitud.EN_PROCESO && sinAnalisisValido) {
+        if ((dto.getEstado() == EstadoSolicitud.PENDIENTE || dto.getEstado() == EstadoSolicitud.EN_PROCESO)
+                && sinAnalisisValido) {
             dispararAnalisisSiCorresponde(solicitud);
         }
 

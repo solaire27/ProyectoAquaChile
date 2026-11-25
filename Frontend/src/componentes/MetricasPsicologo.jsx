@@ -66,6 +66,32 @@ const MetricasPsicologo = ({
     const [subVista, setSubVista] = useState('general'); // 'general' | 'equipo'
     const [busquedaPsi, setBusquedaPsi] = useState('');
     const [ordenPsi, setOrdenPsi] = useState('carga'); // 'carga' | 'finalizadas' | 'tasa' | 'nombre'
+    const [filtroFechaTabla, setFiltroFechaTabla] = useState('TODAS');
+    const [mostrarTodosTabla, setMostrarTodosTabla] = useState(false);
+
+    const cumpleFecha = (fechaIso, rango) => {
+        if (rango === 'TODAS' || !fechaIso) return true;
+        const fecha = new Date(fechaIso);
+        const ahora = new Date();
+        if (rango === 'HOY') {
+            return fecha.toDateString() === ahora.toDateString();
+        }
+        if (rango === 'SEMANA') {
+            return (ahora - fecha) <= 7 * 86400000;
+        }
+        if (rango === 'MES') {
+            return fecha.getMonth() === ahora.getMonth() && fecha.getFullYear() === ahora.getFullYear();
+        }
+        return true;
+    };
+
+    const candidatosRecientes = [...solicitudesFiltradas]
+        .filter(s => cumpleFecha(s.fechaSolicitud, filtroFechaTabla))
+        .sort((a, b) => new Date(b.fechaSolicitud || 0) - new Date(a.fechaSolicitud || 0));
+
+    const candidatosVisibles = mostrarTodosTabla
+        ? candidatosRecientes
+        : candidatosRecientes.slice(0, 6);
 
     const totalSolicitudes = solicitudes.length;
     const totalNuevas = solicitudes.filter(s => s.estado === 'NUEVA_POSTULACION').length;
@@ -75,12 +101,12 @@ const MetricasPsicologo = ({
     const tasaFinalizacion = totalSolicitudes > 0 ? Math.round((totalFinalizadas / totalSolicitudes) * 100) : 0;
 
     const conIaExitosa = solicitudes.filter(
-        s => (s.estado === 'EN_PROCESO' || s.estado === 'FINALIZADA') &&
+        s => (s.estado === 'PENDIENTE' || s.estado === 'EN_PROCESO' || s.estado === 'FINALIZADA') &&
             analizarEstadoIa(s.recomendacionIa).estado === 'ok'
     ).length;
 
     const conErrorIa = solicitudes.filter(
-        s => (s.estado === 'EN_PROCESO' || s.estado === 'FINALIZADA') &&
+        s => (s.estado === 'PENDIENTE' || s.estado === 'EN_PROCESO' || s.estado === 'FINALIZADA') &&
             analizarEstadoIa(s.recomendacionIa).estado === 'error'
     ).length;
 
@@ -297,18 +323,39 @@ const MetricasPsicologo = ({
                                 </div>
                             </div>
                             <p className="eval-helper-note">
-                                Al mover un candidato a <strong>En Evaluación Psicológica</strong>, Gemini analiza su CV automáticamente en segundo plano.
+                                Al mover un candidato a <strong>Pendientes de Revisión</strong>, Gemini analiza su CV automáticamente en segundo plano.
                             </p>
                         </div>
                     </section>
 
                     <section className="recent-candidates-card">
-                        <div className="recent-header">
+                        <div className="recent-header recent-header-flex">
                             <div>
-                                <h3>Candidatos en Seguimiento ({solicitudesFiltradas.length})</h3>
-                                <p>Haz clic sobre una fila para abrir la ficha detallada del postulante.</p>
+                                <h3>Actividad Reciente ({candidatosRecientes.length})</h3>
+                                <p>Últimas postulaciones ordenadas por fecha más reciente. Haz clic en una fila para abrir la ficha.</p>
+                            </div>
+                            <div className="date-segmented-group">
+                                {[
+                                    { key: 'TODAS', label: 'Todas' },
+                                    { key: 'HOY', label: 'Hoy' },
+                                    { key: 'SEMANA', label: '7 días' },
+                                    { key: 'MES', label: 'Este mes' }
+                                ].map(op => (
+                                    <button
+                                        key={op.key}
+                                        type="button"
+                                        className={`date-pill-btn ${filtroFechaTabla === op.key ? 'active' : ''}`}
+                                        onClick={() => {
+                                            setFiltroFechaTabla(op.key);
+                                            setMostrarTodosTabla(false);
+                                        }}
+                                    >
+                                        {op.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
+
                         <div className="table-responsive">
                             <table className="ats-table">
                                 <thead>
@@ -322,83 +369,108 @@ const MetricasPsicologo = ({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {solicitudesFiltradas.map(sol => {
-                                        const colInfo = columnas.find(c => c.key === sol.estado) || columnas[0];
-                                        const famColor = obtenerColorFamilia(sol.familiaCargo);
-                                        const enEvaluacionOFinalizada = sol.estado === 'EN_PROCESO' || sol.estado === 'FINALIZADA';
-                                        const infoIa = analizarEstadoIa(sol.recomendacionIa);
+                                    {candidatosVisibles.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="6" style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
+                                                No hay postulaciones registradas en el rango de fecha seleccionado.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        candidatosVisibles.map(sol => {
+                                            const colInfo = columnas.find(c => c.key === sol.estado) || columnas[0];
+                                            const famColor = obtenerColorFamilia(sol.familiaCargo);
+                                            const etapaConIa =
+                                                sol.estado === 'PENDIENTE' ||
+                                                sol.estado === 'EN_PROCESO' ||
+                                                sol.estado === 'FINALIZADA';
+                                            const infoIa = analizarEstadoIa(sol.recomendacionIa);
 
-                                        return (
-                                            <tr key={sol.id} onClick={() => onSeleccionarSolicitud(sol)}>
-                                                <td>
-                                                    <div className="table-candidate-cell">
-                                                        <div className="mini-avatar">{obtenerIniciales(sol.nombreCandidato)}</div>
-                                                        <div>
-                                                            <div className="candidate-strong">{sol.nombreCandidato}</div>
-                                                            <div className="candidate-sub">#SOL-{sol.id}</div>
+                                            return (
+                                                <tr key={sol.id} onClick={() => onSeleccionarSolicitud(sol)}>
+                                                    <td>
+                                                        <div className="table-candidate-cell">
+                                                            <div className="mini-avatar">{obtenerIniciales(sol.nombreCandidato)}</div>
+                                                            <div>
+                                                                <div className="candidate-strong">{sol.nombreCandidato}</div>
+                                                                <div className="candidate-sub">#SOL-{sol.id}</div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span
-                                                        className="trello-label-pill small"
-                                                        style={{ backgroundColor: famColor.bg, color: famColor.text }}
-                                                    >
-                                                        {sol.familiaCargo || 'General'}
-                                                    </span>
-                                                    <div className="table-cargo-text">{sol.cargo}</div>
-                                                </td>
-                                                <td>
-                                                    <span className="stage-badge" style={{ borderColor: colInfo.color, color: colInfo.color }}>
-                                                        <span className="dot" style={{ backgroundColor: colInfo.color }}></span>
-                                                        {colInfo.titulo}
-                                                    </span>
-                                                </td>
-                                                <td className="ia-snippet-cell">
-                                                    {!enEvaluacionOFinalizada ? (
-                                                        <span className="no-ia-text">Se genera al pasar a "En Evaluación"</span>
-                                                    ) : infoIa.estado === 'error' ? (
-                                                        <span className="ia-error-preview">
-                                                            <FiAlertTriangle className="ia-inline-icon error" />
-                                                            Error al procesar CV con IA
+                                                    </td>
+                                                    <td>
+                                                        <span
+                                                            className="trello-label-pill small"
+                                                            style={{ backgroundColor: famColor.bg, color: famColor.text }}
+                                                        >
+                                                            {sol.familiaCargo || 'General'}
                                                         </span>
-                                                    ) : infoIa.estado === 'sin_cv' ? (
-                                                        <span className="no-ia-text">Sin CV adjunto para analizar</span>
-                                                    ) : infoIa.estado === 'ok' ? (
-                                                        <span className="ia-preview-text">
-                                                            {infoIa.puntaje !== null && (
-                                                                <span className="trello-badge ia-score-badge">
-                                                                    {infoIa.puntaje}/10
-                                                                </span>
-                                                            )}
-                                                            {sol.recomendacionIa.length > 70
-                                                                ? `${sol.recomendacionIa.substring(0, 70)}...`
-                                                                : sol.recomendacionIa}
+                                                        <div className="table-cargo-text">{sol.cargo}</div>
+                                                    </td>
+                                                    <td>
+                                                        <span className="stage-badge" style={{ borderColor: colInfo.color, color: colInfo.color }}>
+                                                            <span className="dot" style={{ backgroundColor: colInfo.color }}></span>
+                                                            {colInfo.titulo}
                                                         </span>
-                                                    ) : (
-                                                        <span className="no-ia-text">Analizando CV en segundo plano...</span>
-                                                    )}
-                                                </td>
-                                                <td className="date-cell">
-                                                    {sol.fechaSolicitud ? new Date(sol.fechaSolicitud).toLocaleDateString('es-CL') : 'Reciente'}
-                                                </td>
-                                                <td>
-                                                    <button
-                                                        className="btn-table-view"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onSeleccionarSolicitud(sol);
-                                                        }}
-                                                    >
-                                                        Ver Ficha
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                                    </td>
+                                                    <td className="ia-snippet-cell">
+                                                        {!etapaConIa ? (
+                                                            <span className="no-ia-text">Se genera al pasar a "Pendientes de Revisión"</span>
+                                                        ) : infoIa.estado === 'error' ? (
+                                                            <span className="ia-error-preview">
+                                                                <FiAlertTriangle className="ia-inline-icon error" />
+                                                                Error al procesar CV con IA
+                                                            </span>
+                                                        ) : infoIa.estado === 'sin_cv' ? (
+                                                            <span className="no-ia-text">Sin CV adjunto para analizar</span>
+                                                        ) : infoIa.estado === 'ok' ? (
+                                                            <span className="ia-preview-text">
+                                                                {infoIa.puntaje !== null && (
+                                                                    <span className="trello-badge ia-score-badge">
+                                                                        {infoIa.puntaje}/10
+                                                                    </span>
+                                                                )}
+                                                                {sol.recomendacionIa.length > 70
+                                                                    ? `${sol.recomendacionIa.substring(0, 70)}...`
+                                                                    : sol.recomendacionIa}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="no-ia-text">Analizando CV en segundo plano...</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="date-cell">
+                                                        {sol.fechaSolicitud ? new Date(sol.fechaSolicitud).toLocaleDateString('es-CL') : 'Reciente'}
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            className="btn-table-view"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onSeleccionarSolicitud(sol);
+                                                            }}
+                                                        >
+                                                            Ver Ficha
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
                                 </tbody>
                             </table>
                         </div>
+
+                        {candidatosRecientes.length > 6 && (
+                            <div className="table-show-more-wrap">
+                                <button
+                                    type="button"
+                                    className="btn-show-more-rows"
+                                    onClick={() => setMostrarTodosTabla(!mostrarTodosTabla)}
+                                >
+                                    {mostrarTodosTabla
+                                        ? 'Mostrar solo las 6 más recientes'
+                                        : `Ver todas las postulaciones (${candidatosRecientes.length})`}
+                                </button>
+                            </div>
+                        )}
                     </section>
                 </>
             )}

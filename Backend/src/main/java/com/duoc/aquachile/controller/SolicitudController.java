@@ -1,5 +1,6 @@
 package com.duoc.aquachile.controller;
 
+import com.duoc.aquachile.dto.EntrevistaRequestDTO;
 import com.duoc.aquachile.dto.SolicitudEstadoUpdateDTO;
 import com.duoc.aquachile.dto.SolicitudRequestDTO;
 import com.duoc.aquachile.dto.SolicitudResponseDTO;
@@ -12,7 +13,13 @@ import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -63,6 +70,23 @@ public class SolicitudController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO')")
+    @PostMapping("/{id}/entrevista")
+    public ResponseEntity<Object> agendarEntrevista(
+            @PathVariable Long id,
+            @Valid @RequestBody EntrevistaRequestDTO dto) {
+
+        SolicitudEvaluacion actualizada = solicitudService.agendarEntrevista(id, dto);
+        String googleCalendarUrl = construirUrlGoogleCalendar(actualizada);
+
+        Map<String, Object> respuesta = new HashMap<>();
+        respuesta.put("mensaje", "Entrevista agendada correctamente");
+        respuesta.put("googleCalendarUrl", googleCalendarUrl);
+        respuesta.put("solicitud", mapearAResponse(actualizada));
+
+        return ResponseEntity.ok(respuesta);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO')")
     @PostMapping("/{id}/reintentar-ia")
     public ResponseEntity<SolicitudResponseDTO> reintentarIa(@PathVariable Long id) {
         return ResponseEntity.ok(mapearAResponse(solicitudService.reintentarAnalisisIa(id)));
@@ -91,6 +115,29 @@ public class SolicitudController {
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
+    private String construirUrlGoogleCalendar(SolicitudEvaluacion sol) {
+        if (sol.getFechaEntrevista() == null) return "";
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+        LocalDateTime inicio = sol.getFechaEntrevista();
+        int duracion = sol.getDuracionEntrevistaMinutos() != null ? sol.getDuracionEntrevistaMinutos() : 45;
+        LocalDateTime fin = inicio.plusMinutes(duracion);
+
+        String titulo = "Entrevista Psicolaboral AquaChile — " + sol.getCandidato().getNombre() + " (" + sol.getCargo() + ")";
+        String detalles = "Candidato: " + sol.getCandidato().getNombre()
+                + "\nCargo: " + sol.getCargo() + " (" + sol.getFamiliaCargo() + ")"
+                + "\nSolicitud: #SOL-" + sol.getId()
+                + (sol.getNotasEntrevista() != null && !sol.getNotasEntrevista().isBlank()
+                ? "\nNotas: " + sol.getNotasEntrevista() : "");
+        String ubicacion = sol.getModalidadEntrevista() != null ? sol.getModalidadEntrevista() : "Online";
+
+        return "https://calendar.google.com/calendar/render?action=TEMPLATE"
+                + "&text=" + URLEncoder.encode(titulo, StandardCharsets.UTF_8)
+                + "&dates=" + inicio.format(fmt) + "/" + fin.format(fmt)
+                + "&ctz=America/Santiago"
+                + "&details=" + URLEncoder.encode(detalles, StandardCharsets.UTF_8)
+                + "&location=" + URLEncoder.encode(ubicacion, StandardCharsets.UTF_8);
+    }
+
     private SolicitudResponseDTO mapearAResponse(SolicitudEvaluacion entidad) {
         SolicitudResponseDTO dto = new SolicitudResponseDTO();
         dto.setId(entidad.getId());
@@ -113,6 +160,10 @@ public class SolicitudController {
         }
 
         dto.setRecomendacionIa(entidad.getRecomendacionIa());
+        dto.setFechaEntrevista(entidad.getFechaEntrevista());
+        dto.setDuracionEntrevistaMinutos(entidad.getDuracionEntrevistaMinutos());
+        dto.setModalidadEntrevista(entidad.getModalidadEntrevista());
+        dto.setNotasEntrevista(entidad.getNotasEntrevista());
 
         return dto;
     }
