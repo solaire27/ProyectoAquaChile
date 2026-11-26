@@ -18,7 +18,8 @@ import jakarta.validation.Valid;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -49,6 +50,9 @@ public class SolicitudService {
     public SolicitudEvaluacion agendarEntrevista(Long id, EntrevistaRequestDTO dto) {
         SolicitudEvaluacion solicitud = obtenerPorId(id);
 
+        // Detectar si ya existía una entrevista previa (reprogramación)
+        boolean esReprogramacion = solicitud.getFechaEntrevista() != null;
+
         solicitud.setFechaEntrevista(dto.getFechaHora());
         solicitud.setDuracionEntrevistaMinutos(
                 dto.getDuracionMinutos() != null && dto.getDuracionMinutos() > 0 ? dto.getDuracionMinutos() : 45
@@ -70,7 +74,7 @@ public class SolicitudService {
 
         solicitud = solicitudRepository.save(solicitud);
 
-        // Enviar correo de invitación con archivo .ics adjunto en segundo plano
+        // Enviar correo de invitación / reprogramación con .ics adjunto en segundo plano
         if (solicitud.getCandidato() != null
                 && solicitud.getCandidato().getCorreo() != null
                 && !solicitud.getCandidato().getCorreo().isBlank()) {
@@ -83,10 +87,14 @@ public class SolicitudService {
             Integer duracion = solicitud.getDuracionEntrevistaMinutos();
             String modalidad = solicitud.getModalidadEntrevista();
             String notas = solicitud.getNotasEntrevista();
+            String nombrePsicologo = solicitud.getResponsable() != null ? solicitud.getResponsable().getNombre() : null;
+            String correoPsicologo = solicitud.getResponsable() != null ? solicitud.getResponsable().getCorreo() : null;
 
             CompletableFuture.runAsync(() ->
                     emailService.enviarInvitacionEntrevista(
-                            correo, nombre, cargo, familia, solicitudId, fechaHora, duracion, modalidad, notas
+                            correo, nombre, cargo, familia, solicitudId,
+                            fechaHora, duracion, modalidad, notas,
+                            esReprogramacion, nombrePsicologo, correoPsicologo
                     )
             );
         }
@@ -279,5 +287,29 @@ public class SolicitudService {
             return solicitudRepository.findByCandidatoNombreContainingIgnoreCaseOrderByFechaSolicitudDesc(nombre.trim());
         }
         return List.of();
+    }
+    @Transactional
+    public SolicitudEvaluacion desasignarSolicitud(Long id, String correoUsuario, boolean esAdmin) {
+        SolicitudEvaluacion solicitud = obtenerPorId(id);
+
+        if (!esAdmin) {
+            if (solicitud.getResponsable() == null
+                    || correoUsuario == null
+                    || !solicitud.getResponsable().getCorreo().equalsIgnoreCase(correoUsuario.trim())) {
+                throw new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Solo puedes devolver a la bandeja postulaciones asignadas a ti."
+                );
+            }
+        }
+
+        solicitud.setResponsable(null);
+        solicitud.setEstado(EstadoSolicitud.NUEVA_POSTULACION);
+        solicitud.setFechaEntrevista(null);
+        solicitud.setDuracionEntrevistaMinutos(null);
+        solicitud.setModalidadEntrevista(null);
+        solicitud.setNotasEntrevista(null);
+
+        return solicitudRepository.save(solicitud);
     }
 }

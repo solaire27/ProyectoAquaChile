@@ -2,7 +2,7 @@ package com.duoc.aquachile.repository;
 
 import com.duoc.aquachile.model.Oferta;
 import org.springframework.data.jpa.repository.JpaRepository;
-
+import java.util.Optional;
 import java.util.List;
 
 public interface OfertaRepository extends JpaRepository<Oferta, Long> {
@@ -12,4 +12,6 @@ public interface OfertaRepository extends JpaRepository<Oferta, Long> {
 
     // Para evitar duplicados al precargar las ofertas base en DataInitializer
     boolean existsByTituloCargoIgnoreCase(String tituloCargo);
+
+    Optional<Oferta> findFirstByTituloCargoIgnoreCaseAndEstadoActivoTrue(String tituloCargo);
 }

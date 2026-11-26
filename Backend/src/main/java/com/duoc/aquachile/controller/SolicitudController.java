@@ -12,7 +12,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.security.core.Authentication;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -48,21 +48,31 @@ public class SolicitudController {
         return new ResponseEntity<>(mapearAResponse(creada), HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO', 'ANALISTA')")
     @GetMapping
-    public ResponseEntity<List<SolicitudResponseDTO>> listar() {
+    public ResponseEntity<List<SolicitudResponseDTO>> listar(){
         List<SolicitudResponseDTO> lista = solicitudService.obtenerTodas().stream()
                 .map(this::mapearAResponse)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(lista);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO', 'ANALISTA')")
     @GetMapping("/{id}")
     public ResponseEntity<SolicitudResponseDTO> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(mapearAResponse(solicitudService.obtenerPorId(id)));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO')")
+    @PatchMapping("/{id}/desasignar")
+    public ResponseEntity<SolicitudResponseDTO> desasignar(
+            @PathVariable Long id,
+            Authentication authentication) {
+        String correoUsuario = authentication != null ? authentication.getName() : null;
+        boolean esAdmin = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        return ResponseEntity.ok(mapearAResponse(solicitudService.desasignarSolicitud(id, correoUsuario, esAdmin)));
+    }
     @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO')")
     @PatchMapping("/{id}/estado")
     public ResponseEntity<SolicitudResponseDTO> actualizarEstado(@PathVariable Long id, @Valid @RequestBody SolicitudEstadoUpdateDTO dto) {

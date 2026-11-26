@@ -93,8 +93,9 @@ public class AiService {
                 - Punto breve 2
 
                 Preguntas sugeridas:
-                1) Pregunta 1
-                2) Pregunta 2
+                                1) Pregunta 1
+                                2) Pregunta 2
+                                3) Pregunta 3
 
                 Nota: Apoyo orientativo sujeto a revisión humana obligatoria.
                 """;

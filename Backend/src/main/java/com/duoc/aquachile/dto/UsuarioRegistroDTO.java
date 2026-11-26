@@ -21,4 +21,7 @@ public class UsuarioRegistroDTO {
 
     @NotNull(message = "El rol es obligatorio")
     private RolUsuario rol;
+
+    @Email(message = "El correo de notificación debe tener un formato válido")
+    private String correoNotificacion;
 }

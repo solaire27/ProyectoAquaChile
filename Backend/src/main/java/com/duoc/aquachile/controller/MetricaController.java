@@ -30,7 +30,7 @@ public class MetricaController {
         this.solicitudRepository = solicitudRepository;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ANALISTA')")
     @GetMapping("/psicologos")
     public ResponseEntity<Map<String, Object>> obtenerMetricasPsicologos() {
         List<Usuario> psicologos = usuarioRepository.findAll().stream()

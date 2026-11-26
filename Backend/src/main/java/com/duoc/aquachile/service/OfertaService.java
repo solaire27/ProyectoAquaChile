@@ -67,5 +67,9 @@ public class OfertaService {
         oferta.setBeneficios(dto.getBeneficios());
         oferta.setRangoSalarial(dto.getRangoSalarial());
         oferta.setCuposDisponibles(dto.getCuposDisponibles());
+
+        if (dto.getCuposDisponibles() != null && dto.getCuposDisponibles() <= 0) {
+            oferta.setEstadoActivo(false);
+        }
     }
 }
