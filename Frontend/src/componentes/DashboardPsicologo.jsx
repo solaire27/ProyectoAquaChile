@@ -25,6 +25,7 @@ import {
     SelectorHoraEntrevista
 } from './SelectorFecha';
 import './DashboardPsicologo.css';
+import AquaLoader from './AquaLoader';
 
 const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -807,7 +808,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     };
 
     if (loading && solicitudes.length === 0) {
-        return <div className="trello-loading">Cargando espacio de trabajo de AquaChile...</div>;
+        return <AquaLoader mensaje="Cargando espacio de trabajo de AquaChile..." />;
     }
 
     const listaSegura = Array.isArray(solicitudes) ? solicitudes : [];
@@ -1044,7 +1045,12 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                     )}
 
                     {vistaActiva === 'candidatos' && (
-                        <DirectorioCandidatos obtenerIniciales={obtenerIniciales} />
+                        <DirectorioCandidatos
+                            obtenerIniciales={obtenerIniciales}
+                            solicitudes={listaSegura}
+                            areasDisponibles={areasDisponibles}
+                            obtenerColorFamilia={obtenerColorFamilia}
+                        />
                     )}
 
                     {vistaActiva === 'ofertas' && esAdmin && <GestionOfertas />}
