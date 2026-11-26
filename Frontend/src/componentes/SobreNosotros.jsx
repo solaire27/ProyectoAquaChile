@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiHome, FiBriefcase, FiMail, FiLock, FiTarget, FiEye, FiAward } from 'react-icons/fi';
+import LogoAquaChile from './LogoAquaChile';
 import './SobreNosotros.css';
 
 const SobreNosotros = () => {
@@ -12,10 +13,10 @@ const SobreNosotros = () => {
     <div className="sobre-nosotros-page">
       <header className="navbar-landing dark-nav">
         <Link to="/" className="logo-section" style={{ textDecoration: 'none' }}>
-          <div className="logo-icon">🌊</div>
+          <LogoAquaChile conCaja cajaSize={36} size={20} />
           <span className="logo-text">AquaChile</span>
         </Link>
-        
+
         <nav className="nav-menu">
           <Link to="/" className="nav-item">
             <FiHome className="nav-icon" />
@@ -47,13 +48,13 @@ const SobreNosotros = () => {
         <div className="about-card main-about-card">
           <h2>Nuestra Empresa</h2>
           <p>
-            Somos una empresa nacida y comprometida con el sur de Chile. Como resultado de la integración de 
-            AquaChile, Los Fiordos, Salmones Magallanes y Friosur, nos hemos consolidado como la empresa productora 
+            Somos una empresa nacida y comprometida con el sur de Chile. Como resultado de la integración de
+            AquaChile, Los Fiordos, Salmones Magallanes y Friosur, nos hemos consolidado como la empresa productora
             más grande en Chile y la segunda a nivel mundial en la industria del salmón.
           </p>
           <p>
-            Nos caracteriza nuestro espíritu emprendedor, la sencillez, la austeridad y la pasión que ponemos en cada 
-            detalle. Actualmente contamos con 320 concesiones, 15 pisciculturas, 6 plantas de proceso y nuestra propia 
+            Nos caracteriza nuestro espíritu emprendedor, la sencillez, la austeridad y la pasión que ponemos en cada
+            detalle. Actualmente contamos con 320 concesiones, 15 pisciculturas, 6 plantas de proceso y nuestra propia
             planta de alimentos.
           </p>
         </div>
@@ -66,7 +67,7 @@ const SobreNosotros = () => {
             <h3>Nuestra Misión</h3>
             <p>Alimentar de forma rica y saludable a millones de personas en todo el mundo, cuidando el entorno y nuestras comunidades.</p>
           </div>
-          
+
           <div className="about-card grid-card">
             <div className="card-icon-wrapper vision-icon">
               <FiEye />

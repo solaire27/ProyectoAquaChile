@@ -15,6 +15,7 @@ import {
 } from 'react-icons/fi';
 import api from '../services/api';
 import './EstadoPostulacion.css';
+import LogoAquaChile from './LogoAquaChile';
 
 const ETAPAS_PROCESO = [
   {
@@ -118,7 +119,7 @@ const EstadoPostulacion = () => {
     <div className="estado-page">
       <header className="estado-header">
         <Link to="/" className="logo-brand">
-          <div className="logo-icon-small">🌊</div>
+          <LogoAquaChile conCaja cajaSize={34} size={19} />
           <span>AquaChile</span>
         </Link>
         <Link to="/" className="link-volver">

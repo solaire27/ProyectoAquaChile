@@ -26,6 +26,7 @@ import {
 } from './SelectorFecha';
 import './DashboardPsicologo.css';
 import AquaLoader from './AquaLoader';
+import LogoAquaChile from './LogoAquaChile';
 
 const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -891,7 +892,9 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             <header className="trello-topbar">
                 <div className="topbar-left">
                     <Link to="/" className="trello-brand" style={{ textDecoration: 'none' }}>
-                        <div className="brand-wave">🌊</div>
+                        <div className="brand-wave" aria-hidden="true">
+                            <LogoAquaChile size={20} />
+                        </div>
                         <span className="brand-name">AquaChile</span>
                     </Link>
                     <span className="workspace-badge">{badgePortal}</span>
@@ -982,6 +985,26 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             </button>
                         </>
                     )}
+
+                    <div className="sidebar-aqua-footer" aria-hidden="true">
+                        <svg className="sidebar-footer-wave" viewBox="0 0 260 64" preserveAspectRatio="none">
+                            <path
+                                d="M0,28 C48,48 92,8 145,26 C192,42 228,16 260,24 L260,64 L0,64 Z"
+                                fill="rgba(2, 132, 199, 0.22)"
+                            />
+                            <path
+                                d="M0,40 C58,20 112,56 172,36 C212,23 238,34 260,38 L260,64 L0,64 Z"
+                                fill="rgba(56, 189, 248, 0.16)"
+                            />
+                        </svg>
+                        <div className="sidebar-footer-caption">
+                            <span className="sidebar-footer-dot" />
+                            <div>
+                                <strong>AquaChile</strong>
+                                <span>Selección Psicolaboral</span>
+                            </div>
+                        </div>
+                    </div>
                 </aside>
 
                 <div className="portal-content-area">

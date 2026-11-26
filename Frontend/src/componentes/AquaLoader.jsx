@@ -1,4 +1,5 @@
 import React from 'react';
+import LogoAquaChile from './LogoAquaChile';
 import './AquaLoader.css';
 
 const BURBUJAS = [
@@ -45,7 +46,9 @@ const AquaLoader = ({ mensaje = 'Cargando espacio de trabajo de AquaChile...' })
                     <div className="aqua-orb">
                         <div className="aqua-orb-liquid aqua-orb-liquid-back" />
                         <div className="aqua-orb-liquid aqua-orb-liquid-front" />
-                        <span className="aqua-orb-icon" aria-hidden="true">🌊</span>
+                        <span className="aqua-orb-icon" aria-hidden="true">
+                            <LogoAquaChile size={36} />
+                        </span>
                     </div>
                 </div>
 

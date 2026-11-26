@@ -7,6 +7,7 @@ import {
 import api from '../services/api';
 import './PostulacionPublica.css';
 import { SelectorFechaNacimiento } from './SelectorFecha';
+import LogoAquaChile from './LogoAquaChile';
 
 const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -239,7 +240,7 @@ const PostulacionPublica = () => {
         <div className="postulacion-page">
             <header className="postulacion-header">
                 <Link to="/" className="logo-brand">
-                    <div className="logo-icon-small">🌊</div>
+                    <LogoAquaChile conCaja cajaSize={34} size={19} />
                     <span>AquaChile</span>
                 </Link>
                 <Link to="/cargos" className="link-volver">

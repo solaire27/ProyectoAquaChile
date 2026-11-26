@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import LogoAquaChile from './LogoAquaChile';
 import './Login.css';
 
 export default function Login({ alAutenticar }) {
@@ -50,13 +51,13 @@ export default function Login({ alAutenticar }) {
 
   return (
     <div className="contenedor-login">
-      <Link to="/" style={{ 
-        position: 'absolute', 
-        top: '30px', 
-        left: '40px', 
-        color: '#f8fafc', 
-        textDecoration: 'none', 
-        fontSize: '15px', 
+      <Link to="/" style={{
+        position: 'absolute',
+        top: '30px',
+        left: '40px',
+        color: '#f8fafc',
+        textDecoration: 'none',
+        fontSize: '15px',
         fontWeight: '500',
         opacity: '0.8'
       }}>
@@ -65,6 +66,9 @@ export default function Login({ alAutenticar }) {
 
       <div className="tarjeta-login">
         <div className="login-header">
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+            <LogoAquaChile conCaja cajaSize={48} size={26} />
+          </div>
           <div className="logo-badge">AquaChile</div>
           <h2>Portal Psicolaboral</h2>
           <p>Ingresa con tus credenciales de evaluador</p>
@@ -75,25 +79,25 @@ export default function Login({ alAutenticar }) {
         <form onSubmit={manejarSubmit}>
           <div className="grupo-input-dark">
             <label>Correo Institucional</label>
-            <input 
-              type="email" 
-              name="correo" 
+            <input
+              type="email"
+              name="correo"
               placeholder="ejemplo@aquachile.com"
-              value={credenciales.correo} 
-              onChange={manejarCambio} 
-              required 
+              value={credenciales.correo}
+              onChange={manejarCambio}
+              required
             />
           </div>
 
           <div className="grupo-input-dark">
             <label>Contraseña</label>
-            <input 
-              type="password" 
-              name="password" 
+            <input
+              type="password"
+              name="password"
               placeholder="••••••••"
-              value={credenciales.password} 
-              onChange={manejarCambio} 
-              required 
+              value={credenciales.password}
+              onChange={manejarCambio}
+              required
             />
           </div>
 

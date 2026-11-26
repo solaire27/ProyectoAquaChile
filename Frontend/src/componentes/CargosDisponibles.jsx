@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fi';
 import api from '../services/api';
 import './CargosDisponibles.css';
+import LogoAquaChile from './LogoAquaChile';
 
 const CargosDisponibles = () => {
   const [ofertas, setOfertas] = useState([]);
@@ -66,7 +67,7 @@ const CargosDisponibles = () => {
     <div className="cargos-page-container">
       <header className="navbar-landing dark-nav">
         <Link to="/" className="logo-section" style={{ textDecoration: 'none' }}>
-          <div className="logo-icon">🌊</div>
+          <LogoAquaChile conCaja cajaSize={36} size={20} />
           <span className="logo-text">AquaChile</span>
         </Link>
         <nav className="nav-menu">

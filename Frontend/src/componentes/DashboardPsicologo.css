@@ -3139,3 +3139,281 @@
   opacity: 0.35;
   cursor: not-allowed;
 }
+
+/* =========================================================
+   TEMA CORPORATIVO AQUACHILE — OCÉANO PROFUNDO & CRISTAL
+   (Cada bloque 1-6 se puede comentar o quitar por separado)
+   ========================================================= */
+
+/* --- 1. FONDO MARINO CON LUZ DE SUPERFICIE Y CURVAS BATIMÉTRICAS --- */
+.trello-workspace {
+  background-color: #071324;
+  background-image:
+    radial-gradient(ellipse 85% 42% at 55% -6%, rgba(14, 165, 233, 0.2) 0%, rgba(2, 132, 199, 0.06) 44%, transparent 74%),
+    radial-gradient(ellipse 50% 45% at 96% 92%, rgba(8, 145, 178, 0.11) 0%, transparent 65%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='320' viewBox='0 0 640 320'%3E%3Cg fill='none' stroke='%2338bdf8' stroke-width='1.1' stroke-opacity='0.055'%3E%3Cpath d='M-40,68 C95,12 220,126 355,68 C485,12 565,108 680,58'/%3E%3Cpath d='M-40,118 C115,58 235,178 375,114 C505,54 575,158 680,108'/%3E%3Cpath d='M-40,174 C105,114 250,232 395,164 C515,104 590,208 680,158'/%3E%3Cpath d='M-40,236 C125,180 260,290 415,224 C530,174 600,268 680,222'/%3E%3C/g%3E%3C/svg%3E");
+  background-attachment: fixed;
+}
+
+.portal-content-area {
+  background: transparent;
+}
+
+/* --- 2. OLAS VECTORIALES Y LÍNEA LUMINOSA EN CABECERAS --- */
+.overview-welcome,
+.overview-welcome-pro,
+.kanban-filter-toolbar {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(16, 35, 62, 0.84) 0%, rgba(11, 25, 46, 0.88) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.overview-welcome::before,
+.overview-welcome-pro::before,
+.kanban-filter-toolbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #0ea5e9 30%, #7dd3fc 55%, transparent 100%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.overview-welcome::after,
+.overview-welcome-pro::after,
+.kanban-filter-toolbar::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 460px;
+  height: 110px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 460 110' preserveAspectRatio='none'%3E%3Cpath d='M0,110 C95,88 155,34 255,58 C335,77 392,26 460,40 L460,110 Z' fill='%230ea5e9' fill-opacity='0.11'/%3E%3Cpath d='M45,110 C140,78 215,98 305,66 C375,41 420,60 460,54 L460,110 Z' fill='%2338bdf8' fill-opacity='0.09'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right bottom;
+  background-size: cover;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.overview-welcome > *,
+.overview-welcome-pro > *,
+.kanban-filter-toolbar > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- 3. EFECTO CRISTAL SUMERGIDO (GLASSMORPHISM) EN SIDEBAR Y TARJETAS --- */
+.trello-topbar {
+  background: rgba(8, 20, 38, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.14);
+}
+
+.portal-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: rgba(9, 22, 41, 0.76);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-right: 1px solid rgba(56, 189, 248, 0.13);
+}
+
+.sidebar-nav-item.active {
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.22) 0%, rgba(14, 165, 233, 0.06) 100%);
+  border-color: rgba(56, 189, 248, 0.34);
+  box-shadow: inset 3px 0 0 #38bdf8;
+}
+
+.kpi-card,
+.chart-card,
+.recent-candidates-card,
+.calendar-main-card,
+.calendar-side-card,
+.inbox-card,
+.psi-scorecard,
+.team-controls-bar {
+  background: rgba(16, 31, 53, 0.74);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(125, 211, 252, 0.11);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 10px 28px rgba(3, 10, 22, 0.28);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover,
+.inbox-card:hover,
+.psi-scorecard:hover {
+  border-color: rgba(56, 189, 248, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(125, 211, 252, 0.14),
+    0 14px 32px rgba(2, 132, 199, 0.14);
+}
+
+.trello-list {
+  background: rgba(13, 27, 46, 0.76);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(125, 211, 252, 0.11);
+}
+
+.trello-card {
+  background: rgba(19, 36, 61, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.trello-card:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 8px 22px rgba(2, 132, 199, 0.16);
+}
+
+/* --- 4. REFLEJO DE AGUA EN BOTONES PRINCIPALES --- */
+.btn-trello-create,
+.btn-go-board,
+.btn-claim-postulacion,
+.btn-guardar-modern,
+.btn-assign-now {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 55%, #06b6d4 100%);
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.28);
+  transition: transform 0.18s ease, box-shadow 0.2s ease, filter 0.18s ease;
+}
+
+.btn-trello-create::before,
+.btn-go-board::before,
+.btn-claim-postulacion::before,
+.btn-guardar-modern::before,
+.btn-assign-now::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -130%;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.34) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  transition: left 0.55s ease;
+  pointer-events: none;
+}
+
+.btn-trello-create:hover:not(:disabled)::before,
+.btn-go-board:hover:not(:disabled)::before,
+.btn-claim-postulacion:hover:not(:disabled)::before,
+.btn-guardar-modern:hover:not(:disabled)::before,
+.btn-assign-now:hover:not(:disabled)::before {
+  left: 165%;
+}
+
+.btn-trello-create:hover:not(:disabled),
+.btn-go-board:hover:not(:disabled),
+.btn-claim-postulacion:hover:not(:disabled),
+.btn-guardar-modern:hover:not(:disabled),
+.btn-assign-now:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(14, 165, 233, 0.42);
+}
+
+/* --- 5. LOGO VECTORIAL + PIE TEMÁTICO DEL SIDEBAR --- */
+.brand-wave {
+  background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+  color: #ffffff;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
+}
+
+.sidebar-aqua-footer {
+  margin-top: auto;
+  padding-top: 24px;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  background: linear-gradient(180deg, rgba(12, 30, 54, 0.45) 0%, rgba(8, 22, 40, 0.9) 100%);
+  min-height: 76px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.sidebar-footer-wave {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.sidebar-footer-caption {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 12px 13px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.sidebar-footer-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.85);
+  flex-shrink: 0;
+}
+
+.sidebar-footer-caption strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: #e0f2fe;
+  letter-spacing: 0.2px;
+}
+
+.sidebar-footer-caption span {
+  display: block;
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+/* --- 6. ACENTO SALMÓN / CORAL EN ALERTAS Y PENDIENTES --- */
+.sidebar-pill.pill-alert {
+  background: rgba(251, 113, 133, 0.18);
+  color: #fda4af;
+  border: 1px solid rgba(251, 113, 133, 0.45);
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.16);
+}
+
+.subtab-alert-dot {
+  background: rgba(251, 113, 133, 0.18) !important;
+  color: #fda4af !important;
+  border: 1px solid rgba(251, 113, 133, 0.42);
+}
+
+.unassigned-alert-banner {
+  background: linear-gradient(135deg, rgba(251, 113, 133, 0.13) 0%, rgba(249, 115, 22, 0.08) 100%);
+  border-color: rgba(251, 113, 133, 0.36);
+}
+
+.unassigned-icon-circle {
+  background: rgba(251, 113, 133, 0.2);
+  color: #fb7185;
+}
+
+.kpi-card.kpi-card-warn {
+  border-color: rgba(251, 113, 133, 0.36);
+}

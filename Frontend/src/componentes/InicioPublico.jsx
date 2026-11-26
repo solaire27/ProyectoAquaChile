@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { FiMail, FiUser, FiLock, FiSearch, FiBriefcase, FiPhone, FiMapPin, FiArrowRight } from 'react-icons/fi';
 import { FaHandshake } from 'react-icons/fa';
 import bgImage from '../assets/pexels-jimmy-10436677.jpg';
+import LogoAquaChile from './LogoAquaChile';
 import './InicioPublico.css';
 
 const InicioPublico = () => {
@@ -35,7 +36,7 @@ const InicioPublico = () => {
     <div className="landing-container" style={{ backgroundImage: `url(${bgImage})` }}>
       <header className="navbar-landing">
         <Link to="/" className="logo-section">
-          <div className="logo-icon">🌊</div>
+          <LogoAquaChile conCaja cajaSize={36} size={20} />
           <span className="logo-text">AquaChile</span>
         </Link>
         <nav className="nav-menu">
@@ -66,7 +67,7 @@ const InicioPublico = () => {
             <p className="hero-subtitle">
               Compromiso, innovación y excelencia en la acuicultura sostenible desde el sur de Chile hacia el mundo.
             </p>
-            
+
             <div className="hero-actions">
               <Link to="/cargos" className="btn-trabaja-nosotros">
                 <FaHandshake className="btn-icon-large" />
@@ -90,7 +91,7 @@ const InicioPublico = () => {
         <div className="glass-container contact-glass">
           <h2 className="section-title">Contáctanos</h2>
           <p className="section-desc">Estamos aquí para resolver tus dudas y ayudarte en tu proceso de postulación.</p>
-          
+
           <div className="contact-grid">
             <div className="contact-item">
               <div className="contact-icon-wrapper"><FiPhone /></div>
@@ -99,7 +100,7 @@ const InicioPublico = () => {
                 <p>+56 65 2433500</p>
               </div>
             </div>
-            
+
             <div className="contact-item">
               <div className="contact-icon-wrapper"><FiMapPin /></div>
               <div className="contact-text">
@@ -108,7 +109,7 @@ const InicioPublico = () => {
                 <p className="sub-text">Puerto Montt, Los Lagos</p>
               </div>
             </div>
-            
+
             <div className="contact-item">
               <div className="contact-icon-wrapper"><FiMail /></div>
               <div className="contact-text">
