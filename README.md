@@ -4,7 +4,7 @@ Plataforma web desarrollada para la automatización y gestión integral de proce
 # Equipo de Desarrollo
 El proyecto está en desarrollo bajo el siguiente equipo:
 
-Darithza Cardenas – Administradora de Base de Datos
+Darithza Cardenas – Administradora de Base de Datos y DevOps
 
 Amador Suárez – Desarrollador Frontend
 
