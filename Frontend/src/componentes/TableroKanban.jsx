@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     FiSearch, FiPlus, FiClock, FiCpu, FiAlignLeft,
-    FiFilter, FiX, FiLayers, FiAlertTriangle, FiInbox, FiCalendar
+    FiFilter, FiX, FiLayers, FiAlertTriangle, FiInbox, FiCalendar, FiLock
 } from 'react-icons/fi';
 import { analizarEstadoIa } from '../utils/iaHelper';
 
@@ -26,6 +26,7 @@ const TableroKanban = ({
     setFiltroFecha,
     analizandoIaId,
     obtenerIniciales,
+    soloLectura = false,
     onSeleccionarSolicitud,
     onAbrirCrearEnColumna,
     onDropTarjeta
@@ -33,11 +34,13 @@ const TableroKanban = ({
     const [columnaDragOver, setColumnaDragOver] = useState(null);
 
     const handleDragStart = (e, id, estadoActual) => {
+        if (soloLectura) return;
         e.dataTransfer.setData('solicitudId', id.toString());
         e.dataTransfer.setData('estadoActual', estadoActual);
     };
 
     const handleDragOver = (e, colKey) => {
+        if (soloLectura) return;
         e.preventDefault();
         if (columnaDragOver !== colKey) {
             setColumnaDragOver(colKey);
@@ -49,6 +52,7 @@ const TableroKanban = ({
     };
 
     const handleDrop = (e, nuevoEstado) => {
+        if (soloLectura) return;
         e.preventDefault();
         setColumnaDragOver(null);
         const id = e.dataTransfer.getData('solicitudId');
@@ -72,7 +76,14 @@ const TableroKanban = ({
                     <div className="board-title-group">
                         <div className="board-icon-badge"><FiLayers /></div>
                         <div>
-                            <h2>Tablero de Gestión de Candidatos</h2>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                <h2>Tablero de Gestión de Candidatos</h2>
+                                {soloLectura && (
+                                    <span className="readonly-role-badge">
+                                        <FiLock /> Vista Solo Lectura
+                                    </span>
+                                )}
+                            </div>
                             <span className="board-subtitle-text">
                                 Mostrando <strong>{solicitudesFiltradas.length}</strong> de {solicitudes.length} postulaciones activas
                             </span>
@@ -163,7 +174,7 @@ const TableroKanban = ({
             <main className="trello-lists-canvas">
                 {columnas.map(col => {
                     const tarjetas = solicitudesFiltradas.filter(sol => sol.estado === col.key);
-                    const isOver = columnaDragOver === col.key;
+                    const isOver = !soloLectura && columnaDragOver === col.key;
 
                     return (
                         <div
@@ -198,7 +209,7 @@ const TableroKanban = ({
                                         <div
                                             key={sol.id}
                                             className="trello-card"
-                                            draggable
+                                            draggable={!soloLectura}
                                             onDragStart={(e) => handleDragStart(e, sol.id, sol.estado)}
                                             onClick={() => onSeleccionarSolicitud(sol)}
                                         >
@@ -263,7 +274,7 @@ const TableroKanban = ({
                                                     </span>
 
                                                     {etapaConIa && infoIa.estado === 'ok' && (
-                                                        <span className="trello-badge ia-badge" title="CV evaluado por Gemini IA">
+                                                        <span className="trello-badge ia-badge" title="CV evaluado por IA">
                                                             <FiCpu /> {infoIa.puntaje !== null ? `IA: ${infoIa.puntaje}/10` : 'IA'}
                                                         </span>
                                                     )}
@@ -295,17 +306,23 @@ const TableroKanban = ({
                                 {tarjetas.length === 0 && (
                                     <div className="trello-empty-slot">
                                         <FiInbox className="empty-slot-icon" />
-                                        <span>Sin candidatos en esta etapa. Arrastra una tarjeta aquí.</span>
+                                        <span>
+                                            {soloLectura
+                                                ? 'Sin candidatos en esta etapa.'
+                                                : 'Sin candidatos en esta etapa. Arrastra una tarjeta aquí.'}
+                                        </span>
                                     </div>
                                 )}
                             </div>
 
-                            <button
-                                className="trello-add-card-btn"
-                                onClick={() => onAbrirCrearEnColumna(col.key)}
-                            >
-                                <FiPlus /> Añadir candidato
-                            </button>
+                            {!soloLectura && (
+                                <button
+                                    className="trello-add-card-btn"
+                                    onClick={() => onAbrirCrearEnColumna(col.key)}
+                                >
+                                    <FiPlus /> Añadir candidato
+                                </button>
+                            )}
                         </div>
                     );
                 })}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     FiTrello, FiPieChart, FiPlus, FiLogOut,
     FiClock, FiCheckCircle, FiAlertCircle,
@@ -7,10 +7,11 @@ import {
     FiUserCheck, FiFileText, FiUploadCloud,
     FiUser, FiMail, FiPhone, FiCreditCard, FiBriefcase,
     FiCalendar, FiRefreshCw, FiUsers, FiUserPlus,
-    FiExternalLink, FiPrinter, FiInfo, FiShield, FiInbox
+    FiExternalLink, FiPrinter, FiInfo, FiShield, FiInbox,
+    FiCornerUpLeft, FiMessageSquare
 } from 'react-icons/fi';
 import api from '../services/api';
-import { analizarEstadoIa } from '../utils/iaHelper';
+import { analizarEstadoIa, parsearAnalisisIa } from '../utils/iaHelper';
 import MetricasPsicologo from './MetricasPsicologo';
 import TableroKanban from './TableroKanban';
 import GestionOfertas from './GestionOfertas';
@@ -18,6 +19,11 @@ import DirectorioCandidatos from './DirectorioCandidatos';
 import GestionUsuarios from './GestionUsuarios';
 import CalendarioEntrevistas from './CalendarioEntrevistas';
 import BandejaPostulaciones from './BandejaPostulaciones';
+import {
+    SelectorFechaNacimiento,
+    SelectorFechaEntrevista,
+    SelectorHoraEntrevista
+} from './SelectorFecha';
 import './DashboardPsicologo.css';
 
 const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -58,21 +64,21 @@ const escaparHtml = (texto) => {
         .replace(/"/g, '&quot;');
 };
 
-const construirUrlGoogleCalendar = (solicitud, datos) => {
-    if (!solicitud || !datos.fecha || !datos.hora) return '';
-    const inicio = new Date(`${datos.fecha}T${datos.hora}:00`);
-    const duracion = parseInt(datos.duracionMinutos, 10) || 45;
+const construirUrlGoogleCalendarDesdeSolicitud = (sol) => {
+    if (!sol || !sol.fechaEntrevista) return '';
+    const inicio = new Date(sol.fechaEntrevista);
+    const duracion = parseInt(sol.duracionEntrevistaMinutos, 10) || 45;
     const fin = new Date(inicio.getTime() + duracion * 60000);
 
     const formatearUtc = (date) =>
         date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-    const titulo = `Entrevista Psicolaboral AquaChile — ${solicitud.nombreCandidato} (${solicitud.cargo})`;
+    const titulo = `Entrevista Psicolaboral AquaChile — ${sol.nombreCandidato} (${sol.cargo})`;
     const detalle = [
-        `Candidato: ${solicitud.nombreCandidato}`,
-        `Cargo: ${solicitud.cargo} (${solicitud.familiaCargo || 'General'})`,
-        `Solicitud: #SOL-${solicitud.id}`,
-        datos.notas ? `Notas: ${datos.notas}` : ''
+        `Candidato: ${sol.nombreCandidato}`,
+        `Cargo: ${sol.cargo} (${sol.familiaCargo || 'General'})`,
+        `Solicitud: #SOL-${sol.id}`,
+        sol.notasEntrevista ? `Notas: ${sol.notasEntrevista}` : ''
     ]
         .filter(Boolean)
         .join('\n');
@@ -82,22 +88,36 @@ const construirUrlGoogleCalendar = (solicitud, datos) => {
         text: titulo,
         dates: `${formatearUtc(inicio)}/${formatearUtc(fin)}`,
         details: detalle,
-        location: datos.modalidad || 'Online'
+        location: sol.modalidadEntrevista || 'Online'
     });
 
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
 };
 
+const resolverVistaDesdeRuta = (pathname) => {
+    const limpia = pathname.replace(/\/+$/, '');
+    if (limpia === '/dashboard/bandeja') return 'bandeja';
+    if (limpia === '/dashboard/kanban') return 'board';
+    if (limpia === '/dashboard/calendario') return 'calendario';
+    if (limpia === '/dashboard/candidatos') return 'candidatos';
+    if (limpia === '/dashboard/ofertas') return 'ofertas';
+    if (limpia === '/dashboard/equipo') return 'usuarios';
+    return 'overview';
+};
+
 const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
+    const location = useLocation();
+    const navigate = useNavigate();
+
     const [solicitudes, setSolicitudes] = useState([]);
     const [metricasEquipo, setMetricasEquipo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [analizandoIaId, setAnalizandoIaId] = useState(null);
     const [tomandoId, setTomandoId] = useState(null);
+    const [desasignando, setDesasignando] = useState(false);
     const [cargandoCv, setCargandoCv] = useState(false);
     const [toasts, setToasts] = useState([]);
 
-    const [vistaActiva, setVistaActiva] = useState('overview');
     const [busqueda, setBusqueda] = useState('');
     const [filtroFamilia, setFiltroFamilia] = useState('TODAS');
     const [filtroFecha, setFiltroFecha] = useState('TODAS');
@@ -105,6 +125,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     const [confirmarModal, setConfirmarModal] = useState({ isOpen: false, solicitudId: null });
     const [eliminarModal, setEliminarModal] = useState({ isOpen: false, id: null, nombre: '' });
+    const [desasignarModal, setDesasignarModal] = useState({ isOpen: false, solicitud: null });
     const [evaluacionModal, setEvaluacionModal] = useState({ isOpen: false, solicitudId: null });
     const [datosEvaluacion, setDatosEvaluacion] = useState({ resultadoGeneral: 'Apto', observaciones: '' });
 
@@ -121,7 +142,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         notas: ''
     });
     const [agendandoEntrevista, setAgendandoEntrevista] = useState(false);
-    const [googleCalendarUrl, setGoogleCalendarUrl] = useState('');
 
     const [crearModalOpen, setCrearModalOpen] = useState(false);
     const [errorCrear, setErrorCrear] = useState('');
@@ -137,7 +157,21 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     const [cvFile, setCvFile] = useState(null);
     const [guardandoPostulacion, setGuardandoPostulacion] = useState(false);
 
-    const esAdmin = usuario?.rol === 'ADMIN';
+    const rolActual = usuario?.rol || 'PSICOLOGO';
+    const esAdmin = rolActual === 'ADMIN';
+    const esAnalista = rolActual === 'ANALISTA';
+    const puedeGestionarFlujo = !esAnalista;
+
+    const vistaActiva = resolverVistaDesdeRuta(location.pathname);
+
+    // Protección de rutas internas por rol
+    useEffect(() => {
+        if (!esAdmin && (vistaActiva === 'ofertas' || vistaActiva === 'usuarios')) {
+            navigate('/dashboard', { replace: true });
+        } else if (esAnalista && (vistaActiva === 'bandeja' || vistaActiva === 'calendario')) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [vistaActiva, esAdmin, esAnalista, navigate]);
 
     const columnas = [
         { key: 'NUEVA_POSTULACION', titulo: 'Nuevas Postulaciones', color: '#38bdf8' },
@@ -170,7 +204,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     };
 
     const cargarMetricasEquipo = async () => {
-        if (!esAdmin) return;
+        if (!esAdmin && !esAnalista) return;
         try {
             const resMetricas = await api.get('/metricas/psicologos');
             setMetricasEquipo(resMetricas.data);
@@ -196,8 +230,10 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         } catch (error) {
             console.error('Error al cargar solicitudes:', error);
             if (error.response?.status === 401 || error.response?.status === 403) {
-                mostrarToast('Tu sesión expiró. Redirigiendo al inicio de sesión...', 'error');
-                setTimeout(() => alCerrarSesion(), 1200);
+                mostrarToast('Tu sesión expiró o no tienes permisos suficientes.', 'error');
+                if (error.response?.status === 401) {
+                    setTimeout(() => alCerrarSesion(), 1200);
+                }
             } else {
                 mostrarToast('No se pudieron actualizar las solicitudes.', 'error');
             }
@@ -218,7 +254,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
 
         const intervalo = setInterval(() => {
             fetchSolicitudes(true);
-        }, 3000); // antes 12000
+        }, 3000);
 
         return () => clearInterval(intervalo);
     }, [solicitudes]);
@@ -230,11 +266,11 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         }
 
         setTomandoId(sol.id);
-        const nuevoEstado = sol.estado === 'NUEVA_POSTULACION' ? 'PENDIENTE' : sol.estado;
 
         try {
+            // Mantiene el estado original (NUEVA_POSTULACION) al pasar al Kanban propio
             const { data } = await api.patch(`/solicitudes/${sol.id}/estado`, {
-                estado: nuevoEstado,
+                estado: sol.estado,
                 responsableId: usuario.id
             });
 
@@ -247,7 +283,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
 
             await cargarMetricasEquipo();
             mostrarToast(
-                `Aceptaste a ${sol.nombreCandidato}. Ya aparece en tu Tablero Kanban y Gemini analizará su CV.`,
+                `Aceptaste a ${sol.nombreCandidato}. Ya aparece en tu Tablero Kanban en "Nuevas Postulaciones".`,
                 'success'
             );
         } catch (error) {
@@ -258,6 +294,36 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             );
         } finally {
             setTomandoId(null);
+        }
+    };
+
+    const confirmarDevolverABandeja = async () => {
+        const sol = desasignarModal.solicitud;
+        if (!sol) return;
+        setDesasignando(true);
+
+        try {
+            const { data } = await api.patch(`/solicitudes/${sol.id}/desasignar`);
+            if (data && data.id) {
+                setSolicitudes(prev => prev.map(s => (s.id === data.id ? data : s)));
+            } else {
+                await fetchSolicitudes(true);
+            }
+            setDesasignarModal({ isOpen: false, solicitud: null });
+            setSolicitudSeleccionada(null);
+            await cargarMetricasEquipo();
+            mostrarToast(
+                `La postulación de ${sol.nombreCandidato} fue devuelta a la Bandeja sin Asignar.`,
+                'success'
+            );
+        } catch (error) {
+            console.error('Error al devolver postulación a la bandeja:', error);
+            mostrarToast(
+                error.response?.data?.message || 'No se pudo devolver la postulación a la bandeja.',
+                'error'
+            );
+        } finally {
+            setDesasignando(false);
         }
     };
 
@@ -304,7 +370,10 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         const fechaBase = sol.fechaEntrevista
             ? new Date(sol.fechaEntrevista)
             : new Date(Date.now() + 86400000);
-        const fechaStr = fechaBase.toISOString().split('T')[0];
+        const anio = fechaBase.getFullYear();
+        const mes = String(fechaBase.getMonth() + 1).padStart(2, '0');
+        const dia = String(fechaBase.getDate()).padStart(2, '0');
+        const fechaStr = `${anio}-${mes}-${dia}`;
         const horaStr = sol.fechaEntrevista
             ? fechaBase.toTimeString().slice(0, 5)
             : '10:00';
@@ -316,13 +385,11 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             modalidad: sol.modalidadEntrevista || 'Online (Google Meet)',
             notas: sol.notasEntrevista || ''
         });
-        setGoogleCalendarUrl('');
         setEntrevistaModal({ isOpen: true, solicitud: sol, moverAEnProceso });
     };
 
     const cerrarModalEntrevista = () => {
         setEntrevistaModal({ isOpen: false, solicitud: null, moverAEnProceso: false });
-        setGoogleCalendarUrl('');
     };
 
     const agendarEntrevista = async (e) => {
@@ -334,7 +401,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         }
 
         setAgendandoEntrevista(true);
-        const fallbackCalendarUrl = construirUrlGoogleCalendar(sol, datosEntrevista);
 
         try {
             const payload = {
@@ -347,7 +413,6 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             };
 
             const { data } = await api.post(`/solicitudes/${sol.id}/entrevista`, payload);
-            setGoogleCalendarUrl(data?.googleCalendarUrl || fallbackCalendarUrl);
 
             if (data?.solicitud) {
                 setSolicitudes(prev =>
@@ -361,15 +426,16 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             }
 
             await cargarMetricasEquipo();
+            const movido = entrevistaModal.moverAEnProceso;
+            cerrarModalEntrevista(); // Cierre automático al agendar con éxito
             mostrarToast(
-                entrevistaModal.moverAEnProceso
+                movido
                     ? 'Entrevista agendada y candidato movido a "En Evaluación Psicológica".'
-                    : 'Entrevista agendada correctamente.',
+                    : 'Entrevista agendada y notificación enviada correctamente.',
                 'success'
             );
         } catch (error) {
             console.error('Error al agendar entrevista:', error);
-            setGoogleCalendarUrl(fallbackCalendarUrl);
             mostrarToast(
                 error.response?.data?.message || 'No se pudo guardar la entrevista en el servidor.',
                 'error'
@@ -458,7 +524,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 </div>
 
                 <div class="section">
-                    <h2>Análisis Automático de CV (Gemini IA)</h2>
+                    <h2>Análisis Automático de CV (IA)</h2>
                     <div class="box">${escaparHtml(sol.recomendacionIa || 'Sin análisis de IA registrado.')}</div>
                     <div class="disclaimer">Nota: El análisis generado por IA es un apoyo orientativo y está sujeto a revisión humana obligatoria por parte del equipo de selección.</div>
                 </div>
@@ -484,7 +550,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     };
 
     const handleDropTarjeta = (id, estadoActual, nuevoEstado) => {
-        if (!id || estadoActual === nuevoEstado) return;
+        if (!puedeGestionarFlujo || !id || estadoActual === nuevoEstado) return;
         if (nuevoEstado === 'FINALIZADA') {
             setConfirmarModal({ isOpen: true, solicitudId: id });
         } else if (nuevoEstado === 'EN_PROCESO') {
@@ -500,6 +566,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
     };
 
     const cambiarEstadoDesdeModal = (id, nuevoEstado) => {
+        if (!puedeGestionarFlujo) return;
         if (nuevoEstado === 'FINALIZADA') {
             setSolicitudSeleccionada(null);
             setConfirmarModal({ isOpen: true, solicitudId: id });
@@ -553,7 +620,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             const nombreEtapa = columnas.find(c => c.key === nuevoEstado)?.titulo || nuevoEstado;
             mostrarToast(
                 disparaIa
-                    ? `Movido a "${nombreEtapa}". Gemini está analizando el CV en segundo plano.`
+                    ? `Movido a "${nombreEtapa}". La IA está analizando el CV en segundo plano.`
                     : `Candidato movido a "${nombreEtapa}".`,
                 'success'
             );
@@ -717,7 +784,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             console.error('Error al crear postulación:', error);
             setErrorCrear(
                 error.response?.data?.message ||
-                'No se pudo registrar la postulación. Verifica que el RUT y correo no estén duplicados.'
+                'No se pudo registrar la postulación. Verifica que el RUT no tenga ya una solicitud para este mismo cargo.'
             );
             setGuardandoPostulacion(false);
         }
@@ -750,8 +817,8 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         s => !s.responsableId && !s.nombreResponsable && s.estado !== 'FINALIZADA'
     );
 
-    // Espacio de trabajo según rol: ADMIN ve todo; PSICOLOGO solo sus casos asignados
-    const solicitudesEspacio = esAdmin
+    // Espacio según rol: ADMIN y ANALISTA ven todo; PSICOLOGO solo sus casos asignados
+    const solicitudesEspacio = (esAdmin || esAnalista)
         ? listaSegura
         : listaSegura.filter(esResponsableActual);
 
@@ -794,11 +861,28 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
         ? analizarEstadoIa(solicitudSeleccionada.recomendacionIa)
         : null;
 
+    const contenidoIaModal = solicitudSeleccionada
+        ? parsearAnalisisIa(solicitudSeleccionada.recomendacionIa)
+        : { resumen: '', preguntas: [] };
+
     const etapaModalConIa =
         solicitudSeleccionada &&
         (solicitudSeleccionada.estado === 'PENDIENTE' ||
             solicitudSeleccionada.estado === 'EN_PROCESO' ||
             solicitudSeleccionada.estado === 'FINALIZADA');
+
+    const puedeDevolverModal =
+        solicitudSeleccionada &&
+        puedeGestionarFlujo &&
+        Boolean(solicitudSeleccionada.responsableId || solicitudSeleccionada.nombreResponsable) &&
+        solicitudSeleccionada.estado !== 'FINALIZADA' &&
+        (esAdmin || esResponsableActual(solicitudSeleccionada));
+
+    const badgePortal = esAdmin
+        ? 'Portal Administración'
+        : esAnalista
+            ? 'Portal Analista'
+            : 'Portal Psicólogos';
 
     return (
         <div className="trello-workspace">
@@ -809,7 +893,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                         <div className="brand-wave">🌊</div>
                         <span className="brand-name">AquaChile</span>
                     </Link>
-                    <span className="workspace-badge">Portal Psicólogos</span>
+                    <span className="workspace-badge">{badgePortal}</span>
                 </div>
 
                 <div className="topbar-right">
@@ -822,7 +906,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             {obtenerIniciales(usuario?.nombre || 'Evaluador')}
                         </div>
                         <span className="user-name">
-                            {usuario?.nombre || 'Evaluador'} ({usuario?.rol || 'USER'})
+                            {usuario?.nombre || 'Evaluador'} ({rolActual})
                         </span>
                     </div>
 
@@ -832,42 +916,50 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 </div>
             </header>
 
-            {/* ESTRUCTURA CON SIDEBAR + CONTENIDO PRINCIPAL */}
+            {/* ESTRUCTURA CON SIDEBAR FIJO + CONTENIDO PRINCIPAL */}
             <div className="portal-shell">
                 <aside className="portal-sidebar">
                     <div className="sidebar-group-title">Selección</div>
                     <button
                         className={`sidebar-nav-item ${vistaActiva === 'overview' ? 'active' : ''}`}
-                        onClick={() => setVistaActiva('overview')}
+                        onClick={() => navigate('/dashboard')}
                     >
                         <FiPieChart /> <span>Resumen y Métricas</span>
                     </button>
-                    <button
-                        className={`sidebar-nav-item ${vistaActiva === 'bandeja' ? 'active' : ''}`}
-                        onClick={() => setVistaActiva('bandeja')}
-                    >
-                        <FiInbox /> <span>Bandeja sin Asignar</span>
-                        <span className={`sidebar-pill ${solicitudesSinAsignar.length > 0 ? 'pill-alert' : ''}`}>
-                            {solicitudesSinAsignar.length}
-                        </span>
-                    </button>
+
+                    {!esAnalista && (
+                        <button
+                            className={`sidebar-nav-item ${vistaActiva === 'bandeja' ? 'active' : ''}`}
+                            onClick={() => navigate('/dashboard/bandeja')}
+                        >
+                            <FiInbox /> <span>Bandeja sin Asignar</span>
+                            <span className={`sidebar-pill ${solicitudesSinAsignar.length > 0 ? 'pill-alert' : ''}`}>
+                                {solicitudesSinAsignar.length}
+                            </span>
+                        </button>
+                    )}
+
                     <button
                         className={`sidebar-nav-item ${vistaActiva === 'board' ? 'active' : ''}`}
-                        onClick={() => setVistaActiva('board')}
+                        onClick={() => navigate('/dashboard/kanban')}
                     >
-                        <FiTrello /> <span>{esAdmin ? 'Tablero Kanban' : 'Mi Tablero Kanban'}</span>
+                        <FiTrello /> <span>{esAdmin || esAnalista ? 'Tablero Kanban' : 'Mi Tablero Kanban'}</span>
                         <span className="sidebar-pill">{solicitudesEspacio.length}</span>
                     </button>
-                    <button
-                        className={`sidebar-nav-item ${vistaActiva === 'calendario' ? 'active' : ''}`}
-                        onClick={() => setVistaActiva('calendario')}
-                    >
-                        <FiCalendar /> <span>{esAdmin ? 'Agenda de Entrevistas' : 'Mis Entrevistas'}</span>
-                        <span className="sidebar-pill">{totalEntrevistasVisibles}</span>
-                    </button>
+
+                    {!esAnalista && (
+                        <button
+                            className={`sidebar-nav-item ${vistaActiva === 'calendario' ? 'active' : ''}`}
+                            onClick={() => navigate('/dashboard/calendario')}
+                        >
+                            <FiCalendar /> <span>{esAdmin ? 'Agenda de Entrevistas' : 'Mis Entrevistas'}</span>
+                            <span className="sidebar-pill">{totalEntrevistasVisibles}</span>
+                        </button>
+                    )}
+
                     <button
                         className={`sidebar-nav-item ${vistaActiva === 'candidatos' ? 'active' : ''}`}
-                        onClick={() => setVistaActiva('candidatos')}
+                        onClick={() => navigate('/dashboard/candidatos')}
                     >
                         <FiUsers /> <span>Directorio Candidatos</span>
                     </button>
@@ -877,13 +969,13 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             <div className="sidebar-group-title">Administración</div>
                             <button
                                 className={`sidebar-nav-item ${vistaActiva === 'ofertas' ? 'active' : ''}`}
-                                onClick={() => setVistaActiva('ofertas')}
+                                onClick={() => navigate('/dashboard/ofertas')}
                             >
                                 <FiBriefcase /> <span>Gestión de Ofertas</span>
                             </button>
                             <button
                                 className={`sidebar-nav-item ${vistaActiva === 'usuarios' ? 'active' : ''}`}
-                                onClick={() => setVistaActiva('usuarios')}
+                                onClick={() => navigate('/dashboard/equipo')}
                             >
                                 <FiUserPlus /> <span>Gestión de Equipo</span>
                             </button>
@@ -894,7 +986,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                 <div className="portal-content-area">
                     {vistaActiva === 'overview' && (
                         <MetricasPsicologo
-                            esAdmin={esAdmin}
+                            esAdmin={esAdmin || esAnalista}
                             metricasEquipo={metricasEquipo}
                             solicitudes={solicitudesEspacio}
                             solicitudesFiltradas={solicitudesEspacio}
@@ -902,12 +994,12 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             areasDisponibles={areasDisponibles}
                             obtenerColorFamilia={obtenerColorFamilia}
                             obtenerIniciales={obtenerIniciales}
-                            onIrAlTablero={() => setVistaActiva('board')}
+                            onIrAlTablero={() => navigate('/dashboard/kanban')}
                             onSeleccionarSolicitud={setSolicitudSeleccionada}
                         />
                     )}
 
-                    {vistaActiva === 'bandeja' && (
+                    {vistaActiva === 'bandeja' && !esAnalista && (
                         <BandejaPostulaciones
                             solicitudesSinAsignar={solicitudesSinAsignar}
                             areasDisponibles={areasDisponibles}
@@ -934,13 +1026,14 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             setFiltroFecha={setFiltroFecha}
                             analizandoIaId={analizandoIaId}
                             obtenerIniciales={obtenerIniciales}
+                            soloLectura={esAnalista}
                             onSeleccionarSolicitud={setSolicitudSeleccionada}
                             onAbrirCrearEnColumna={abrirModalCrear}
                             onDropTarjeta={handleDropTarjeta}
                         />
                     )}
 
-                    {vistaActiva === 'calendario' && (
+                    {vistaActiva === 'calendario' && !esAnalista && (
                         <CalendarioEntrevistas
                             solicitudes={solicitudesEspacio}
                             esAdmin={esAdmin}
@@ -956,7 +1049,9 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
 
                     {vistaActiva === 'ofertas' && esAdmin && <GestionOfertas />}
 
-                    {vistaActiva === 'usuarios' && esAdmin && <GestionUsuarios />}
+                    {vistaActiva === 'usuarios' && esAdmin && (
+                        <GestionUsuarios usuarioActual={usuario} />
+                    )}
                 </div>
             </div>
 
@@ -1014,12 +1109,13 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             <div className="create-form-grid-2">
                                 <div className="create-field">
                                     <label><FiCalendar /> Fecha de Nacimiento <span>*</span></label>
-                                    <input
-                                        type="date"
-                                        name="fechaNacimiento"
+                                    <SelectorFechaNacimiento
                                         value={nuevaPostulacion.fechaNacimiento}
-                                        onChange={handleCrearChange}
-                                        required
+                                        theme="dark"
+                                        onChange={(val) => {
+                                            setErrorCrear('');
+                                            setNuevaPostulacion(prev => ({ ...prev, fechaNacimiento: val }));
+                                        }}
                                     />
                                 </div>
                                 <div className="create-field">
@@ -1091,7 +1187,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                                 ? `${cvFile.name} (${(cvFile.size / (1024 * 1024)).toFixed(2)} MB)`
                                                 : 'Haz clic aquí para adjuntar el CV en PDF (máx. 5 MB)'}
                                         </strong>
-                                        <span>Gemini IA evaluará este PDF cuando el candidato pase a "Pendientes de Revisión"</span>
+                                        <span>La IA evaluará este PDF cuando el candidato pase a "Pendientes de Revisión"</span>
                                     </div>
                                 </label>
                             </div>
@@ -1174,26 +1270,36 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
 
                                 {solicitudSeleccionada.fechaEntrevista && (
                                     <div className="modal-interview-summary">
-                                        <FiCalendar />
-                                        <div>
-                                            <strong>
-                                                Entrevista agendada:{' '}
-                                                {new Date(solicitudSeleccionada.fechaEntrevista).toLocaleDateString('es-CL', {
-                                                    day: '2-digit',
-                                                    month: 'long',
-                                                    year: 'numeric'
-                                                })}{' '}
-                                                a las{' '}
-                                                {new Date(solicitudSeleccionada.fechaEntrevista).toLocaleTimeString('es-CL', {
-                                                    hour: '2-digit',
-                                                    minute: '2-digit'
-                                                })}
-                                            </strong>
-                                            <span>
-                                                {solicitudSeleccionada.modalidadEntrevista || 'Online'} ·{' '}
-                                                {solicitudSeleccionada.duracionEntrevistaMinutos || 45} min
-                                            </span>
+                                        <div className="modal-interview-info">
+                                            <FiCalendar />
+                                            <div>
+                                                <strong>
+                                                    Entrevista agendada:{' '}
+                                                    {new Date(solicitudSeleccionada.fechaEntrevista).toLocaleDateString('es-CL', {
+                                                        day: '2-digit',
+                                                        month: 'long',
+                                                        year: 'numeric'
+                                                    })}{' '}
+                                                    a las{' '}
+                                                    {new Date(solicitudSeleccionada.fechaEntrevista).toLocaleTimeString('es-CL', {
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    })}
+                                                </strong>
+                                                <span>
+                                                    {solicitudSeleccionada.modalidadEntrevista || 'Online'} ·{' '}
+                                                    {solicitudSeleccionada.duracionEntrevistaMinutos || 45} min
+                                                </span>
+                                            </div>
                                         </div>
+                                        <a
+                                            href={construirUrlGoogleCalendarDesdeSolicitud(solicitudSeleccionada)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn-agenda-gcal"
+                                        >
+                                            <FiExternalLink /> Google Calendar
+                                        </a>
                                     </div>
                                 )}
 
@@ -1201,10 +1307,10 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                     <div className="section-block-title" style={{ justifyContent: 'space-between' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <FiCpu className="icon-cyan" />
-                                            <h4>Evaluación de CV con IA (Gemini)</h4>
+                                            <h4>Evaluación de CV con IA</h4>
                                         </div>
 
-                                        {etapaModalConIa && !solicitudSeleccionada.recomendacionIa && (
+                                        {puedeGestionarFlujo && etapaModalConIa && !solicitudSeleccionada.recomendacionIa && (
                                             <div style={{ display: 'flex', gap: '6px' }}>
                                                 <button
                                                     className="btn-mini-refresh"
@@ -1222,7 +1328,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                             </div>
                                         )}
 
-                                        {etapaModalConIa && infoIaModal?.estado === 'error' && (
+                                        {puedeGestionarFlujo && etapaModalConIa && infoIaModal?.estado === 'error' && (
                                             <button
                                                 className="btn-mini-refresh"
                                                 onClick={() => reintentarIa(solicitudSeleccionada.id)}
@@ -1236,15 +1342,33 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
 
                                     {etapaModalConIa ? (
                                         <p className="ia-content-box" style={{ whiteSpace: 'pre-line' }}>
-                                            {solicitudSeleccionada.recomendacionIa ||
-                                                'La IA está analizando el CV en segundo plano. Si esta postulación ya estaba en esta etapa antes de activar el flujo, presiona "Analizar ahora".'}
+                                            {contenidoIaModal.resumen ||
+                                                'La IA está analizando el CV en segundo plano. Se actualizará automáticamente en unos segundos.'}
                                         </p>
                                     ) : (
                                         <div className="eval-pending-box">
                                             <p>
-                                                La evaluación automática de IA se ejecuta cuando aceptas la postulación o avanza a la etapa{' '}
+                                                La evaluación automática de IA se ejecuta cuando el candidato avanza a la etapa{' '}
                                                 <strong>Pendientes de Revisión</strong>.
                                             </p>
+                                        </div>
+                                    )}
+
+                                    {/* APARTADO DEDICADO PARA PREGUNTAS SUGERIDAS POR LA IA */}
+                                    {etapaModalConIa && contenidoIaModal.preguntas.length > 0 && (
+                                        <div className="ia-questions-box">
+                                            <div className="ia-questions-header">
+                                                <FiMessageSquare />
+                                                <h5>Preguntas Sugeridas para la Entrevista ({contenidoIaModal.preguntas.length})</h5>
+                                            </div>
+                                            <ol className="ia-questions-list">
+                                                {contenidoIaModal.preguntas.map((pregunta, idx) => (
+                                                    <li key={idx} className="ia-question-item">
+                                                        <span className="ia-question-num">{idx + 1}</span>
+                                                        <span>{pregunta}</span>
+                                                    </li>
+                                                ))}
+                                            </ol>
                                         </div>
                                     )}
 
@@ -1290,7 +1414,7 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             </div>
 
                             <aside className="trello-modal-sidebar">
-                                {!solicitudSeleccionada.responsableId && !solicitudSeleccionada.nombreResponsable && (
+                                {puedeGestionarFlujo && !solicitudSeleccionada.responsableId && !solicitudSeleccionada.nombreResponsable && (
                                     <>
                                         <h5>Asignación</h5>
                                         <button
@@ -1304,20 +1428,24 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                     </>
                                 )}
 
-                                <h5 style={{ marginTop: !solicitudSeleccionada.responsableId ? '18px' : '0' }}>Mover a etapa</h5>
-                                {columnas.map(col => (
-                                    <button
-                                        key={col.key}
-                                        disabled={solicitudSeleccionada.estado === col.key}
-                                        className={`sidebar-action-btn ${solicitudSeleccionada.estado === col.key ? 'current-stage' : ''}`}
-                                        onClick={() => cambiarEstadoDesdeModal(solicitudSeleccionada.id, col.key)}
-                                    >
-                                        <span className="dot" style={{ backgroundColor: col.color }}></span>
-                                        {col.titulo}
-                                    </button>
-                                ))}
+                                {puedeGestionarFlujo && (
+                                    <>
+                                        <h5 style={{ marginTop: !solicitudSeleccionada.responsableId ? '18px' : '0' }}>Mover a etapa</h5>
+                                        {columnas.map(col => (
+                                            <button
+                                                key={col.key}
+                                                disabled={solicitudSeleccionada.estado === col.key}
+                                                className={`sidebar-action-btn ${solicitudSeleccionada.estado === col.key ? 'current-stage' : ''}`}
+                                                onClick={() => cambiarEstadoDesdeModal(solicitudSeleccionada.id, col.key)}
+                                            >
+                                                <span className="dot" style={{ backgroundColor: col.color }}></span>
+                                                {col.titulo}
+                                            </button>
+                                        ))}
+                                    </>
+                                )}
 
-                                <h5 style={{ marginTop: '20px' }}>Acciones</h5>
+                                <h5 style={{ marginTop: puedeGestionarFlujo ? '20px' : '0' }}>Acciones</h5>
 
                                 {solicitudSeleccionada.urlCv ? (
                                     <button
@@ -1333,12 +1461,14 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                     </button>
                                 )}
 
-                                <button
-                                    className="sidebar-action-btn calendar-action-btn"
-                                    onClick={() => abrirModalEntrevista(solicitudSeleccionada, false)}
-                                >
-                                    <FiCalendar /> {solicitudSeleccionada.fechaEntrevista ? 'Reagendar Entrevista' : 'Agendar Entrevista'}
-                                </button>
+                                {puedeGestionarFlujo && (
+                                    <button
+                                        className="sidebar-action-btn calendar-action-btn"
+                                        onClick={() => abrirModalEntrevista(solicitudSeleccionada, false)}
+                                    >
+                                        <FiCalendar /> {solicitudSeleccionada.fechaEntrevista ? 'Reagendar Entrevista' : 'Agendar Entrevista'}
+                                    </button>
+                                )}
 
                                 <button
                                     className="sidebar-action-btn"
@@ -1347,16 +1477,27 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                     <FiPrinter /> Exportar Ficha PDF
                                 </button>
 
-                                <button
-                                    className="sidebar-action-btn primary-eval-btn"
-                                    onClick={() => {
-                                        const id = solicitudSeleccionada.id;
-                                        setSolicitudSeleccionada(null);
-                                        setEvaluacionModal({ isOpen: true, solicitudId: id });
-                                    }}
-                                >
-                                    <FiCheckCircle /> Evaluar y Finalizar
-                                </button>
+                                {puedeGestionarFlujo && (
+                                    <button
+                                        className="sidebar-action-btn primary-eval-btn"
+                                        onClick={() => {
+                                            const id = solicitudSeleccionada.id;
+                                            setSolicitudSeleccionada(null);
+                                            setEvaluacionModal({ isOpen: true, solicitudId: id });
+                                        }}
+                                    >
+                                        <FiCheckCircle /> Evaluar y Finalizar
+                                    </button>
+                                )}
+
+                                {puedeDevolverModal && (
+                                    <button
+                                        className="sidebar-action-btn return-inbox-btn"
+                                        onClick={() => setDesasignarModal({ isOpen: true, solicitud: solicitudSeleccionada })}
+                                    >
+                                        <FiCornerUpLeft /> Devolver a Bandeja
+                                    </button>
+                                )}
 
                                 {esAdmin && (
                                     <button
@@ -1375,7 +1516,11 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
             {/* ================= MODAL AGENDAR ENTREVISTA (CALENDAR) ================= */}
             {entrevistaModal.isOpen && entrevistaModal.solicitud && (
                 <div className="modal-overlay" onClick={cerrarModalEntrevista}>
-                    <div className="modern-create-modal" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
+                    <div
+                        className="modern-create-modal modal-picker-safe"
+                        style={{ maxWidth: '540px' }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="create-modal-header">
                             <div className="create-header-title">
                                 <div className="create-icon-badge"><FiCalendar /></div>
@@ -1383,7 +1528,9 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                     <h3>
                                         {entrevistaModal.moverAEnProceso
                                             ? 'Agendar Entrevista Obligatoria'
-                                            : 'Agendar Entrevista'}
+                                            : entrevistaModal.solicitud.fechaEntrevista
+                                                ? 'Reagendar Entrevista'
+                                                : 'Agendar Entrevista'}
                                     </h3>
                                     <p>
                                         Candidato: <strong>{entrevistaModal.solicitud.nombreCandidato}</strong> ({entrevistaModal.solicitud.cargo})
@@ -1408,20 +1555,16 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                             <div className="create-form-grid-2">
                                 <div className="create-field">
                                     <label><FiCalendar /> Fecha <span>*</span></label>
-                                    <input
-                                        type="date"
+                                    <SelectorFechaEntrevista
                                         value={datosEntrevista.fecha}
-                                        onChange={(e) => setDatosEntrevista({ ...datosEntrevista, fecha: e.target.value })}
-                                        required
+                                        onChange={(val) => setDatosEntrevista(prev => ({ ...prev, fecha: val }))}
                                     />
                                 </div>
                                 <div className="create-field">
                                     <label><FiClock /> Hora <span>*</span></label>
-                                    <input
-                                        type="time"
+                                    <SelectorHoraEntrevista
                                         value={datosEntrevista.hora}
-                                        onChange={(e) => setDatosEntrevista({ ...datosEntrevista, hora: e.target.value })}
-                                        required
+                                        onChange={(val) => setDatosEntrevista(prev => ({ ...prev, hora: val }))}
                                     />
                                 </div>
                             </div>
@@ -1459,23 +1602,9 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                 />
                             </div>
 
-                            {googleCalendarUrl && (
-                                <div className="calendar-ready-box">
-                                    <span>Evento listo para tu agenda:</span>
-                                    <a
-                                        href={googleCalendarUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="btn-google-calendar"
-                                    >
-                                        <FiExternalLink /> Agregar a Google Calendar
-                                    </a>
-                                </div>
-                            )}
-
                             <div className="create-modal-footer">
                                 <button type="button" onClick={cerrarModalEntrevista} className="btn-cancelar">
-                                    Cerrar
+                                    Cancelar
                                 </button>
                                 <button type="submit" disabled={agendandoEntrevista} className="btn-guardar-modern">
                                     {agendandoEntrevista
@@ -1486,6 +1615,36 @@ const DashboardPsicologo = ({ usuario, alCerrarSesion }) => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ================= MODAL CONFIRMAR DEVOLVER A BANDEJA ================= */}
+            {desasignarModal.isOpen && desasignarModal.solicitud && (
+                <div className="modal-overlay" onClick={() => setDesasignarModal({ isOpen: false, solicitud: null })}>
+                    <div className="modal-content" style={{ textAlign: 'center', maxWidth: '410px' }} onClick={(e) => e.stopPropagation()}>
+                        <FiCornerUpLeft style={{ fontSize: '40px', color: '#fbbf24', marginBottom: '12px' }} />
+                        <h3 style={{ marginBottom: '10px', fontSize: '19px' }}>¿Devolver a Bandeja sin Asignar?</h3>
+                        <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>
+                            La postulación de <strong>{desasignarModal.solicitud.nombreCandidato}</strong> saldrá de tu tablero y volverá a estar disponible para otro psicólogo.
+                        </p>
+                        <div className="modal-buttons" style={{ justifyContent: 'center', gap: '15px' }}>
+                            <button
+                                type="button"
+                                onClick={() => setDesasignarModal({ isOpen: false, solicitud: null })}
+                                className="btn-cancelar"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                disabled={desasignando}
+                                onClick={confirmarDevolverABandeja}
+                                className="btn-guardar"
+                            >
+                                {desasignando ? 'Devolviendo...' : 'Sí, Devolver'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

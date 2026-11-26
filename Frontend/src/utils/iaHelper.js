@@ -17,7 +17,6 @@ export const analizarEstadoIa = (texto) => {
         return { estado: 'sin_cv', puntaje: null };
     }
 
-    // Extrae puntajes como "8/10", "8.5/10", "8 de 10" o "Puntaje: 8"
     const match =
         texto.match(/(\d{1,2}(?:[.,]\d)?)\s*(?:\/\s*10|de\s*10)/i) ||
         texto.match(/puntaje[:\s*]+(\d{1,2}(?:[.,]\d)?)/i);
@@ -31,4 +30,46 @@ export const analizarEstadoIa = (texto) => {
     }
 
     return { estado: 'ok', puntaje };
+};
+
+export const parsearAnalisisIa = (texto) => {
+    if (!texto || !texto.trim()) {
+        return { resumen: '', preguntas: [] };
+    }
+
+    const estado = analizarEstadoIa(texto).estado;
+    if (estado !== 'ok') {
+        return { resumen: texto.trim(), preguntas: [] };
+    }
+
+    // Quita la nota final si la IA la incluyó, porque ya mostramos el aviso fijo de revisión humana
+    const sinNota = texto.replace(/\n?\s*Nota\s*:[\s\S]*$/i, '').trim();
+
+    const matchPreguntas = sinNota.match(/Preguntas\s+sugeridas\s*:/i);
+    if (!matchPreguntas) {
+        return { resumen: sinNota, preguntas: [] };
+    }
+
+    const idx = matchPreguntas.index;
+    const resumen = sinNota.slice(0, idx).trim();
+    const bloquePreguntas = sinNota.slice(idx + matchPreguntas[0].length).trim();
+
+    // Soporta tanto formato numerado en varias líneas como en una sola línea (1) ... 2) ... 3) ...)
+    let preguntas = bloquePreguntas
+        .split(/(?:^|\n|\s)(?=\d+[\)\.\-]\s)/)
+        .map(p => p.replace(/^\d+[\)\.\-]\s*/, '').trim())
+        .filter(Boolean);
+
+    // Respaldo si el modelo respondió con viñetas en vez de números
+    if (preguntas.length <= 1 && bloquePreguntas.includes('\n')) {
+        const porLinea = bloquePreguntas
+            .split('\n')
+            .map(l => l.replace(/^[\-•*]\s*/, '').replace(/^\d+[\)\.\-]\s*/, '').trim())
+            .filter(Boolean);
+        if (porLinea.length > 0) {
+            preguntas = porLinea;
+        }
+    }
+
+    return { resumen, preguntas };
 };

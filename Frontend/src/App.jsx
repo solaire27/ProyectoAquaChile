@@ -36,7 +36,7 @@ function App() {
   const estaAutenticado = Boolean(localStorage.getItem('token'));
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', backgroundColor: '#0b192c' }}>
+    <div style={{ width: '100%', minHeight: '100vh', backgroundColor: '#0b192c', overflowX: 'clip' }}>
       <Routes>
         <Route path="/" element={<InicioPublico />} />
         <Route path="/postular" element={<PostulacionPublica />} />
@@ -46,7 +46,7 @@ function App() {
 
         <Route path="/login" element={<Login alAutenticar={manejarAutenticacion} />} />
         <Route
-          path="/dashboard"
+          path="/dashboard/*"
           element={
             estaAutenticado ? (
               <DashboardPsicologo usuario={usuario} alCerrarSesion={cerrarSesion} />

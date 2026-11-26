@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
     FiBriefcase, FiPlus, FiEdit2, FiTrash2, FiX,
     FiToggleLeft, FiToggleRight, FiAlertCircle, FiCheckCircle,
-    FiMapPin
+    FiMapPin, FiInfo
 } from 'react-icons/fi';
 import api from '../services/api';
 
@@ -28,8 +28,24 @@ const GestionOfertas = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [editandoId, setEditandoId] = useState(null);
     const [form, setForm] = useState(estadoInicialForm);
-    const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
     const [guardando, setGuardando] = useState(false);
+
+    // Modal propio de eliminación + toasts
+    const [eliminarModal, setEliminarModal] = useState({ isOpen: false, oferta: null });
+    const [eliminando, setEliminando] = useState(false);
+    const [toasts, setToasts] = useState([]);
+
+    const mostrarToast = (texto, tipo = 'info') => {
+        const id = Date.now() + Math.random();
+        setToasts(prev => [...prev, { id, texto, tipo }]);
+        setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== id));
+        }, 4200);
+    };
+
+    const cerrarToast = (id) => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+    };
 
     const cargarOfertas = async () => {
         setLoading(true);
@@ -37,10 +53,10 @@ const GestionOfertas = () => {
             const { data } = await api.get('/ofertas');
             setOfertas(Array.isArray(data) ? data : []);
         } catch (error) {
-            setMensaje({
-                tipo: 'error',
-                texto: error.response?.data?.message || 'No se pudieron cargar las ofertas.'
-            });
+            mostrarToast(
+                error.response?.data?.message || 'No se pudieron cargar las ofertas.',
+                'error'
+            );
         } finally {
             setLoading(false);
         }
@@ -53,7 +69,6 @@ const GestionOfertas = () => {
     const abrirCrear = () => {
         setEditandoId(null);
         setForm(estadoInicialForm);
-        setMensaje({ tipo: '', texto: '' });
         setModalOpen(true);
     };
 
@@ -63,7 +78,7 @@ const GestionOfertas = () => {
             tituloCargo: oferta.tituloCargo || '',
             familiaCargo: oferta.familiaCargo || 'Operativo',
             descripcion: oferta.descripcion || '',
-            cuposDisponibles: oferta.cuposDisponibles || 1,
+            cuposDisponibles: oferta.cuposDisponibles ?? 1,
             ubicacion: oferta.ubicacion || '',
             modalidad: oferta.modalidad || 'Presencial',
             funcionesPrincipales: oferta.funcionesPrincipales || '',
@@ -71,38 +86,37 @@ const GestionOfertas = () => {
             beneficios: oferta.beneficios || '',
             rangoSalarial: oferta.rangoSalarial || ''
         });
-        setMensaje({ tipo: '', texto: '' });
         setModalOpen(true);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setGuardando(true);
-        setMensaje({ tipo: '', texto: '' });
 
+        const cuposNum = parseInt(form.cuposDisponibles, 10);
         const payload = {
             ...form,
             tituloCargo: form.tituloCargo.trim(),
             ubicacion: form.ubicacion.trim(),
             rangoSalarial: form.rangoSalarial.trim(),
-            cuposDisponibles: parseInt(form.cuposDisponibles, 10) || 1
+            cuposDisponibles: Number.isNaN(cuposNum) ? 0 : Math.max(0, cuposNum)
         };
 
         try {
             if (editandoId) {
                 await api.put(`/ofertas/${editandoId}`, payload);
-                setMensaje({ tipo: 'ok', texto: 'Oferta actualizada correctamente.' });
+                mostrarToast('Oferta actualizada correctamente.', 'success');
             } else {
                 await api.post('/ofertas', payload);
-                setMensaje({ tipo: 'ok', texto: 'Oferta creada y publicada.' });
+                mostrarToast('Oferta creada y publicada correctamente.', 'success');
             }
             setModalOpen(false);
             await cargarOfertas();
         } catch (error) {
-            setMensaje({
-                tipo: 'error',
-                texto: error.response?.data?.message || 'Error al guardar la oferta.'
-            });
+            mostrarToast(
+                error.response?.data?.message || 'Error al guardar la oferta.',
+                'error'
+            );
         } finally {
             setGuardando(false);
         }
@@ -110,29 +124,42 @@ const GestionOfertas = () => {
 
     const toggleEstado = async (oferta) => {
         try {
+            const nuevoEstado = !oferta.estadoActivo;
             await api.patch(`/ofertas/${oferta.id}/estado`, null, {
-                params: { activo: !oferta.estadoActivo }
+                params: { activo: nuevoEstado }
             });
+            mostrarToast(
+                nuevoEstado
+                    ? `Oferta "${oferta.tituloCargo}" activada en el portal.`
+                    : `Oferta "${oferta.tituloCargo}" cerrada en el portal.`,
+                'info'
+            );
             await cargarOfertas();
         } catch (error) {
-            setMensaje({
-                tipo: 'error',
-                texto: error.response?.data?.message || 'No se pudo cambiar el estado de la oferta.'
-            });
+            mostrarToast(
+                error.response?.data?.message || 'No se pudo cambiar el estado de la oferta.',
+                'error'
+            );
         }
     };
 
-    const eliminarOferta = async (id, titulo) => {
-        if (!window.confirm(`¿Eliminar definitivamente la oferta "${titulo}"?`)) return;
+    const confirmarEliminarOferta = async () => {
+        const oferta = eliminarModal.oferta;
+        if (!oferta) return;
+        setEliminando(true);
+
         try {
-            await api.delete(`/ofertas/${id}`);
-            setMensaje({ tipo: 'ok', texto: 'Oferta eliminada.' });
+            await api.delete(`/ofertas/${oferta.id}`);
+            setEliminarModal({ isOpen: false, oferta: null });
+            mostrarToast(`Oferta "${oferta.tituloCargo}" eliminada correctamente.`, 'success');
             await cargarOfertas();
         } catch (error) {
-            setMensaje({
-                tipo: 'error',
-                texto: error.response?.data?.message || 'No se pudo eliminar la oferta.'
-            });
+            mostrarToast(
+                error.response?.data?.message || 'No se pudo eliminar la oferta.',
+                'error'
+            );
+        } finally {
+            setEliminando(false);
         }
     };
 
@@ -148,17 +175,10 @@ const GestionOfertas = () => {
                 </button>
             </div>
 
-            {mensaje.texto && (
-                <div className={mensaje.tipo === 'error' ? 'create-error-banner' : 'module-success-banner'}>
-                    {mensaje.tipo === 'error' ? <FiAlertCircle /> : <FiCheckCircle />}
-                    <span>{mensaje.texto}</span>
-                </div>
-            )}
-
             <section className="recent-candidates-card">
                 <div className="recent-header">
                     <h3>Vacantes Registradas ({ofertas.length})</h3>
-                    <p>Las ofertas inactivas quedan ocultas en la página pública sin perder su historial.</p>
+                    <p>Las ofertas sin cupos o cerradas quedan ocultas en la página pública sin perder su historial.</p>
                 </div>
 
                 {loading ? (
@@ -225,7 +245,8 @@ const GestionOfertas = () => {
                                                 </button>
                                                 <button
                                                     className="btn-table-danger"
-                                                    onClick={() => eliminarOferta(oferta.id, oferta.tituloCargo)}
+                                                    onClick={() => setEliminarModal({ isOpen: true, oferta })}
+                                                    title="Eliminar oferta"
                                                 >
                                                     <FiTrash2 />
                                                 </button>
@@ -239,6 +260,7 @@ const GestionOfertas = () => {
                 )}
             </section>
 
+            {/* MODAL CREAR / EDITAR OFERTA */}
             {modalOpen && (
                 <div className="modal-overlay" onClick={() => setModalOpen(false)}>
                     <div
@@ -287,7 +309,7 @@ const GestionOfertas = () => {
                                     <label>Cupos Disponibles <span>*</span></label>
                                     <input
                                         type="number"
-                                        min="1"
+                                        min="0"
                                         value={form.cuposDisponibles}
                                         onChange={(e) => setForm({ ...form, cuposDisponibles: e.target.value })}
                                         required
@@ -382,6 +404,57 @@ const GestionOfertas = () => {
                     </div>
                 </div>
             )}
+
+            {/* MODAL PROPIO CONFIRMAR ELIMINACIÓN DE OFERTA */}
+            {eliminarModal.isOpen && eliminarModal.oferta && (
+                <div className="modal-overlay" onClick={() => setEliminarModal({ isOpen: false, oferta: null })}>
+                    <div className="modal-content" style={{ textAlign: 'center', maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+                        <FiTrash2 style={{ fontSize: '40px', color: '#f87171', marginBottom: '12px' }} />
+                        <h3 style={{ marginBottom: '10px', fontSize: '19px' }}>¿Eliminar oferta laboral?</h3>
+                        <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>
+                            Se eliminará definitivamente la vacante <strong>{eliminarModal.oferta.tituloCargo}</strong> del portal de AquaChile.
+                        </p>
+                        <div className="modal-buttons" style={{ justifyContent: 'center', gap: '14px' }}>
+                            <button
+                                type="button"
+                                className="btn-cancelar"
+                                onClick={() => setEliminarModal({ isOpen: false, oferta: null })}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                className="btn-eliminar-confirm"
+                                disabled={eliminando}
+                                onClick={confirmarEliminarOferta}
+                            >
+                                {eliminando ? 'Eliminando...' : 'Sí, Eliminar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* NOTIFICACIONES TOAST PROPIAS */}
+            <div className="toast-stack">
+                {toasts.map(toast => (
+                    <div key={toast.id} className={`toast-item toast-${toast.tipo}`}>
+                        <span className="toast-icon">
+                            {toast.tipo === 'success' ? (
+                                <FiCheckCircle />
+                            ) : toast.tipo === 'error' ? (
+                                <FiAlertCircle />
+                            ) : (
+                                <FiInfo />
+                            )}
+                        </span>
+                        <span className="toast-text">{toast.texto}</span>
+                        <button className="toast-close" onClick={() => cerrarToast(toast.id)}>
+                            <FiX />
+                        </button>
+                    </div>
+                ))}
+            </div>
         </main>
     );
 };

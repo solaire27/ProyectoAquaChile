@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fi';
 import api from '../services/api';
 import './PostulacionPublica.css';
+import { SelectorFechaNacimiento } from './SelectorFecha';
 
 const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -313,13 +314,15 @@ const PostulacionPublica = () => {
                         <div className="form-row-modern">
                             <div className="input-group-modern">
                                 <label htmlFor="fechaNacimiento">Fecha de Nacimiento <span className="required-mark">*</span></label>
-                                <input
+                                <SelectorFechaNacimiento
                                     id="fechaNacimiento"
-                                    type="date"
-                                    name="fechaNacimiento"
                                     value={formData.fechaNacimiento}
-                                    onChange={handleChange}
-                                    className={erroresCampos.fechaNacimiento ? 'input-error' : ''}
+                                    theme="light"
+                                    hasError={Boolean(erroresCampos.fechaNacimiento)}
+                                    onChange={(valor) => {
+                                        setErroresCampos(prev => ({ ...prev, fechaNacimiento: null }));
+                                        setFormData(prev => ({ ...prev, fechaNacimiento: valor }));
+                                    }}
                                 />
                                 {erroresCampos.fechaNacimiento && (
                                     <span className="error-message">
