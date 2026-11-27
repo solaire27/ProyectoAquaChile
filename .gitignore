@@ -17,7 +17,7 @@ Backend/target/
 .env.docker
 *.env
 *.env.*
-
+!.env.example
 # =========================
 # Frontend (React/Vite)
 # =========================
