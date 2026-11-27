@@ -43,10 +43,11 @@ public class EvaluacionService {
         solicitudRepository.save(solicitud);
 
         // Si el candidato resulta "Apto", descontar 1 cupo de la oferta activa y desactivarla si llega a 0
-        if (dto.getResultadoGeneral() != null
-                && "Apto".equalsIgnoreCase(dto.getResultadoGeneral().trim())
-                && solicitud.getCargo() != null
-                && !solicitud.getCargo().isBlank()) {
+        String resultado = dto.getResultadoGeneral() != null ? dto.getResultadoGeneral().trim() : "";
+        boolean esAprobado = "Apto".equalsIgnoreCase(resultado)
+                || "Apto con Observaciones".equalsIgnoreCase(resultado);
+
+        if (esAprobado && solicitud.getCargo() != null && !solicitud.getCargo().isBlank()) {
             ofertaRepository.findFirstByTituloCargoIgnoreCaseAndEstadoActivoTrue(solicitud.getCargo().trim())
                     .ifPresent(oferta -> {
                         int cuposActuales = oferta.getCuposDisponibles() != null ? oferta.getCuposDisponibles() : 0;
