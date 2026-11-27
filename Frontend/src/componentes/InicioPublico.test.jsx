@@ -6,35 +6,33 @@ import InicioPublico from './InicioPublico';
 
 describe('InicioPublico', () => {
     it('renderiza el título principal de AquaChile', () => {
-        // Envolvemos en MemoryRouter porque InicioPublico usa <Link>
         render(
             <MemoryRouter>
                 <InicioPublico />
             </MemoryRouter>
         );
 
-        // Busca el texto "AquaChile" que pusimos como h1 en el componente
         const heading = screen.getByRole('heading', { level: 1, name: 'AquaChile' });
         expect(heading).toBeInTheDocument();
     });
 
-    it('navega a la ruta "/postular" al hacer clic en Trabaja Con Nosotros', async () => {
+    it('navega a la ruta "/cargos" al hacer clic en Trabaja Con Nosotros', async () => {
         const user = userEvent.setup();
 
         render(
             <MemoryRouter initialEntries={['/']}>
                 <Routes>
                     <Route path="/" element={<InicioPublico />} />
-                    <Route path="/postular" element={<h1>Formulario de Postulación</h1>} />
+                    <Route path="/cargos" element={<h1>Listado de Cargos</h1>} />
                 </Routes>
             </MemoryRouter>
         );
 
-        // Simula el clic en el botón
         const botonPostular = screen.getByRole('link', { name: 'Trabaja Con Nosotros' });
+        expect(botonPostular).toHaveAttribute('href', '/cargos');
+
         await user.click(botonPostular);
 
-        // Verifica que la navegación funcionó leyendo el h1 de destino
-        expect(screen.getByRole('heading', { name: 'Formulario de Postulación' })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Listado de Cargos' })).toBeInTheDocument();
     });
 });
