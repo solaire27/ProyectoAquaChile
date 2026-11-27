@@ -18,10 +18,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
+      include: ['src/**/*.{js,jsx}'],
       exclude: [
         'node_modules/',
         'setupTests.js',
         'src/main.jsx',
+        'src/assets/**',
         '**/*.test.{js,jsx}'
       ],
       thresholds: {
@@ -32,4 +34,4 @@ export default defineConfig({
       }
     }
   }
-}) 
+})
